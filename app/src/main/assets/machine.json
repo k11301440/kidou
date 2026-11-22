@@ -1,0 +1,523 @@
+{
+  "machineNameSlots": [["n_machine", "n_core"]],
+  "phases": [
+    {
+      "phase": 1,
+      "unlockedControls": ["button"],
+      "plates": [
+        [["n_button"], ["v_push"], ["num_2", "m_times"]]
+      ],
+      "initialState": {
+        "lever": "up",
+        "dial": 1,
+        "key": "out",
+        "conduit": "cut",
+        "buttonPresses": 0,
+        "dialTurns": 0,
+        "seqStep": 0,
+        "lamp": "off",
+        "primaryMessage": [["n_machine"], ["v_stop"]],
+        "secondaryMessage": []
+      },
+      "totalSeqSteps": 0,
+      "rules": [
+        {
+          "trigger": "button_push",
+          "conditions": { "buttonPressesEq": 0 },
+          "effects": {
+            "setButtonPresses": 1,
+            "lamp": "amber",
+            "sound": "click",
+            "primaryMessage": [["n_button"], ["v_push"], ["num_1", "m_times"]],
+            "secondaryMessage": [["n_lamp"], ["v_start"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "buttonPressesEq": 1 },
+          "effects": {
+            "setButtonPresses": 2,
+            "lamp": "green",
+            "sound": "phase_clear",
+            "advanceToPhase": 2,
+            "primaryMessage": [["n_button"], ["v_push"], ["num_2", "m_times"]],
+            "secondaryMessage": [["n_gate"], ["v_open"], ["adj_complete"]]
+          }
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "unlockedControls": ["button", "lever"],
+      "plates": [
+        [["n_lever"], ["v_pull"]],
+        [["n_button"], ["v_push"]]
+      ],
+      "initialState": {
+        "lever": "up",
+        "dial": 1,
+        "key": "out",
+        "conduit": "cut",
+        "buttonPresses": 0,
+        "dialTurns": 0,
+        "seqStep": 0,
+        "lamp": "amber",
+        "primaryMessage": [["n_phase", "num_2", "m_ord"], ["v_start"]],
+        "secondaryMessage": []
+      },
+      "totalSeqSteps": 0,
+      "rules": [
+        {
+          "trigger": "lever_pull",
+          "conditions": {},
+          "effects": {
+            "setLever": "down",
+            "lamp": "amber",
+            "sound": "clunk",
+            "primaryMessage": [["n_lever"], ["v_pull"]],
+            "secondaryMessage": [["n_lever"], ["v_down"]]
+          }
+        },
+        {
+          "trigger": "lever_push",
+          "conditions": {},
+          "effects": {
+            "setLever": "up",
+            "lamp": "off",
+            "sound": "clunk",
+            "primaryMessage": [["n_lever"], ["v_up"]],
+            "secondaryMessage": [["n_gate"], ["v_close"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "leverEq": "up" },
+          "effects": {
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_lever"], ["v_pull", "m_not"]],
+            "secondaryMessage": [["n_machine"], ["v_stop"], ["adj_danger"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "leverEq": "down" },
+          "effects": {
+            "lamp": "green",
+            "sound": "phase_clear",
+            "advanceToPhase": 3,
+            "primaryMessage": [["n_phase", "num_2", "m_ord"], ["adj_complete"]],
+            "secondaryMessage": [["n_gate"], ["v_open"]]
+          }
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "unlockedControls": ["button", "lever", "dial"],
+      "plates": [
+        [["n_dial"], ["v_match"], ["num_4"]],
+        [["n_lever"], ["v_up"]],
+        [["n_button"], ["v_push"]]
+      ],
+      "initialState": {
+        "lever": "down",
+        "dial": 1,
+        "key": "out",
+        "conduit": "cut",
+        "buttonPresses": 0,
+        "dialTurns": 0,
+        "seqStep": 0,
+        "lamp": "amber",
+        "primaryMessage": [["n_phase", "num_3", "m_ord"], ["v_start"]],
+        "secondaryMessage": []
+      },
+      "totalSeqSteps": 0,
+      "rules": [
+        {
+          "trigger": "dial_turn",
+          "conditions": {},
+          "effects": {
+            "incrementDialWrap": 5,
+            "lamp": "amber",
+            "sound": "ratchet",
+            "primaryMessage": [["n_dial"], ["v_turn"], ["$dial_num"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "lever_push",
+          "conditions": {},
+          "effects": {
+            "setLever": "up",
+            "lamp": "amber",
+            "sound": "clunk",
+            "primaryMessage": [["n_lever"], ["v_up"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "lever_pull",
+          "conditions": {},
+          "effects": {
+            "setLever": "down",
+            "lamp": "off",
+            "sound": "clunk",
+            "primaryMessage": [["n_lever"], ["v_down"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "dialLt": 4 },
+          "effects": {
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_dial"], ["v_match", "m_not"]],
+            "secondaryMessage": [["n_dial"], ["v_up"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "dialGt": 4 },
+          "effects": {
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_dial"], ["v_match", "m_not"]],
+            "secondaryMessage": [["n_dial"], ["v_down"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "dialEq": 4, "leverEq": "down" },
+          "effects": {
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_lever"], ["v_up", "m_not"]],
+            "secondaryMessage": [["n_machine"], ["v_stop"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "dialEq": 4, "leverEq": "up" },
+          "effects": {
+            "lamp": "green",
+            "sound": "phase_clear",
+            "advanceToPhase": 4,
+            "primaryMessage": [["n_phase", "num_3", "m_ord"], ["adj_complete"]],
+            "secondaryMessage": [["n_gate"], ["v_open"]]
+          }
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "unlockedControls": ["button", "lever", "dial", "key"],
+      "plates": [
+        [["num_1", "m_ord"], ["n_key"], ["v_insert"]],
+        [["num_2", "m_ord"], ["n_dial"], ["v_turn"], ["num_3", "m_times"]],
+        [["num_3", "m_ord"], ["n_lever"], ["v_pull"]],
+        [["num_4", "m_ord"], ["n_key"], ["v_remove"]]
+      ],
+      "initialState": {
+        "lever": "up",
+        "dial": 1,
+        "key": "out",
+        "conduit": "cut",
+        "buttonPresses": 0,
+        "dialTurns": 0,
+        "seqStep": 0,
+        "lamp": "amber",
+        "primaryMessage": [["n_phase", "num_4", "m_ord"], ["v_start"]],
+        "secondaryMessage": []
+      },
+      "totalSeqSteps": 4,
+      "rules": [
+        {
+          "trigger": "key_insert",
+          "conditions": { "seqStepEq": 0 },
+          "effects": {
+            "setKey": "in",
+            "setSeqStep": 1,
+            "setDialTurns": 0,
+            "lamp": "amber",
+            "sound": "chime",
+            "primaryMessage": [["n_key"], ["v_insert"]],
+            "secondaryMessage": [["num_1", "m_ord"], ["adj_complete"]]
+          }
+        },
+        {
+          "trigger": "dial_turn",
+          "conditions": { "seqStepEq": 1, "dialTurnsLt": 2 },
+          "effects": {
+            "incrementDialWrap": 5,
+            "incrementDialTurns": 1,
+            "lamp": "amber",
+            "sound": "ratchet",
+            "primaryMessage": [["n_dial"], ["v_turn"], ["$turn_num", "m_times"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "dial_turn",
+          "conditions": { "seqStepEq": 1, "dialTurnsEq": 2 },
+          "effects": {
+            "incrementDialWrap": 5,
+            "incrementDialTurns": 1,
+            "setSeqStep": 2,
+            "lamp": "amber",
+            "sound": "chime",
+            "primaryMessage": [["n_dial"], ["v_turn"], ["num_3", "m_times"]],
+            "secondaryMessage": [["num_2", "m_ord"], ["adj_complete"]]
+          }
+        },
+        {
+          "trigger": "lever_pull",
+          "conditions": { "seqStepEq": 2 },
+          "effects": {
+            "setLever": "down",
+            "setSeqStep": 3,
+            "lamp": "amber",
+            "sound": "chime",
+            "primaryMessage": [["n_lever"], ["v_pull"]],
+            "secondaryMessage": [["num_3", "m_ord"], ["adj_complete"]]
+          }
+        },
+        {
+          "trigger": "key_remove",
+          "conditions": { "seqStepEq": 3 },
+          "effects": {
+            "setKey": "out",
+            "setSeqStep": 4,
+            "lamp": "green",
+            "sound": "phase_clear",
+            "advanceToPhase": 5,
+            "primaryMessage": [["n_key"], ["v_remove"]],
+            "secondaryMessage": [["n_phase", "num_4", "m_ord"], ["adj_complete"]]
+          }
+        },
+        {
+          "trigger": "*",
+          "conditions": { "seqStepEq": 0 },
+          "effects": {
+            "resetPhase4": true,
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_machine"], ["v_stop"], ["adj_danger"]],
+            "secondaryMessage": [["n_key"], ["v_insert", "m_not"]]
+          }
+        },
+        {
+          "trigger": "*",
+          "conditions": { "seqStepEq": 1 },
+          "effects": {
+            "resetPhase4": true,
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_machine"], ["v_stop"], ["adj_danger"]],
+            "secondaryMessage": [["n_dial"], ["v_turn", "m_not"]]
+          }
+        },
+        {
+          "trigger": "*",
+          "conditions": { "seqStepEq": 2 },
+          "effects": {
+            "resetPhase4": true,
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_machine"], ["v_stop"], ["adj_danger"]],
+            "secondaryMessage": [["n_lever"], ["v_pull", "m_not"]]
+          }
+        },
+        {
+          "trigger": "*",
+          "conditions": { "seqStepEq": 3 },
+          "effects": {
+            "resetPhase4": true,
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_machine"], ["v_stop"], ["adj_danger"]],
+            "secondaryMessage": [["n_key"], ["v_remove", "m_not"]]
+          }
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "unlockedControls": ["conduit", "key", "dial", "lever", "button"],
+      "plates": [
+        [["n_conduit"], ["v_connect"]],
+        [["n_key"], ["v_insert"]],
+        [["n_dial"], ["v_match"], ["num_5"]],
+        [["n_lever"], ["v_down", "m_not"]],
+        [["n_button"], ["v_push"], ["num_2", "m_times"]]
+      ],
+      "initialState": {
+        "lever": "down",
+        "dial": 1,
+        "key": "out",
+        "conduit": "cut",
+        "buttonPresses": 0,
+        "dialTurns": 0,
+        "seqStep": 0,
+        "lamp": "amber",
+        "primaryMessage": [["n_phase", "num_5", "m_ord"], ["v_start"]],
+        "secondaryMessage": []
+      },
+      "totalSeqSteps": 0,
+      "rules": [
+        {
+          "trigger": "conduit_connect",
+          "conditions": {},
+          "effects": {
+            "setConduit": "connected",
+            "setButtonPresses": 0,
+            "lamp": "amber",
+            "sound": "clunk",
+            "primaryMessage": [["n_conduit"], ["v_connect"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "conduit_cut",
+          "conditions": {},
+          "effects": {
+            "setConduit": "cut",
+            "setButtonPresses": 0,
+            "lamp": "off",
+            "sound": "clunk",
+            "primaryMessage": [["n_conduit"], ["v_cut"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "key_insert",
+          "conditions": {},
+          "effects": {
+            "setKey": "in",
+            "setButtonPresses": 0,
+            "lamp": "amber",
+            "sound": "chime",
+            "primaryMessage": [["n_key"], ["v_insert"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "key_remove",
+          "conditions": {},
+          "effects": {
+            "setKey": "out",
+            "setButtonPresses": 0,
+            "lamp": "off",
+            "sound": "clunk",
+            "primaryMessage": [["n_key"], ["v_remove"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "dial_turn",
+          "conditions": {},
+          "effects": {
+            "incrementDialWrap": 5,
+            "setButtonPresses": 0,
+            "lamp": "amber",
+            "sound": "ratchet",
+            "primaryMessage": [["n_dial"], ["v_turn"], ["$dial_num"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "lever_push",
+          "conditions": {},
+          "effects": {
+            "setLever": "up",
+            "setButtonPresses": 0,
+            "lamp": "amber",
+            "sound": "clunk",
+            "primaryMessage": [["n_lever"], ["v_up"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "lever_pull",
+          "conditions": {},
+          "effects": {
+            "setLever": "down",
+            "setButtonPresses": 0,
+            "lamp": "off",
+            "sound": "clunk",
+            "primaryMessage": [["n_lever"], ["v_down"]],
+            "secondaryMessage": []
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "conduitEq": "cut" },
+          "effects": {
+            "setButtonPresses": 0,
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_conduit"], ["v_connect", "m_not"]],
+            "secondaryMessage": [["n_machine"], ["v_stop"], ["adj_danger"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "keyEq": "out" },
+          "effects": {
+            "setButtonPresses": 0,
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_key"], ["v_insert", "m_not"]],
+            "secondaryMessage": [["n_machine"], ["v_stop"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "dialLt": 5 },
+          "effects": {
+            "setButtonPresses": 0,
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_dial"], ["v_match", "m_not"]],
+            "secondaryMessage": [["n_dial"], ["v_up"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "leverEq": "down" },
+          "effects": {
+            "setButtonPresses": 0,
+            "lamp": "red",
+            "sound": "warn",
+            "primaryMessage": [["n_lever"], ["v_up", "m_not"]],
+            "secondaryMessage": [["n_machine"], ["v_stop"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "conduitEq": "connected", "keyEq": "in", "dialEq": 5, "leverEq": "up", "buttonPressesEq": 0 },
+          "effects": {
+            "setButtonPresses": 1,
+            "lamp": "amber",
+            "sound": "chime",
+            "primaryMessage": [["n_core"], ["v_start"]],
+            "secondaryMessage": [["n_button"], ["v_push"], ["num_1", "m_times"]]
+          }
+        },
+        {
+          "trigger": "button_push",
+          "conditions": { "conduitEq": "connected", "keyEq": "in", "dialEq": 5, "leverEq": "up", "buttonPressesEq": 1 },
+          "effects": {
+            "setButtonPresses": 2,
+            "lamp": "green",
+            "sound": "core_activate",
+            "completeGame": true,
+            "primaryMessage": [["n_machine", "n_core"], ["v_start"], ["adj_complete"]],
+            "secondaryMessage": [["n_phase", "num_5", "m_ord"], ["adj_complete"]]
+          }
+        }
+      ]
+    }
+  ]
+}
