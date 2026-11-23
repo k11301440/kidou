@@ -11,8 +11,18 @@ android {
     applicationId = "com.kidou.game"
     minSdk = 26
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 2
+    versionName = "0.2.0"
+
+    val admobAppId =
+      (project.findProperty("KIDOU_ADMOB_APP_ID") as? String)
+        ?: "ca-app-pub-3940256099942544~3347511713"
+    val admobRewardedId =
+      (project.findProperty("KIDOU_ADMOB_REWARDED_ID") as? String)
+        ?: "ca-app-pub-3940256099942544/5224354917"
+
+    manifestPlaceholders["ADMOB_APP_ID"] = admobAppId
+    buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"$admobRewardedId\"")
   }
 
   buildTypes {
@@ -28,7 +38,7 @@ android {
   buildFeatures {
     compose = true
     aidl = false
-    buildConfig = false
+    buildConfig = true
     shaders = false
   }
 
@@ -84,4 +94,7 @@ dependencies {
 
   // JSON
   implementation("com.google.code.gson:gson:2.11.0")
+
+  // AdMob
+  implementation("com.google.android.gms:play-services-ads:25.5.0")
 }

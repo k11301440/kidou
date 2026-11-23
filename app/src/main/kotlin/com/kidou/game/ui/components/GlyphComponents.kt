@@ -14,15 +14,14 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -33,9 +32,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidou.game.model.AppLanguage
 import com.kidou.game.model.DictionaryEntry
 import com.kidou.game.model.GlyphGrid
 import com.kidou.game.model.WordColorTag
+import com.kidou.game.model.WordDef
 import com.kidou.game.ui.theme.KidouColors
 import kotlin.math.floor
 
@@ -72,19 +73,21 @@ fun PixelGlyph(
 fun GlyphWordTile(
   wordId: String,
   grid: GlyphGrid?,
+  wordDef: WordDef?,
   entry: DictionaryEntry?,
+  language: AppLanguage,
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
   compact: Boolean = false,
   glyphColor: Color = KidouColors.Glyph,
 ) {
-  val translation = entry?.translation?.trim().orEmpty()
+  val translation = entry?.resolvedTranslation(wordDef, language)?.trim().orEmpty()
   val colorTag = entry?.colorTag ?: WordColorTag.UNCLASSIFIED
   val tagColor = Color(colorTag.colorHex)
   val hasTag = colorTag != WordColorTag.UNCLASSIFIED
   val borderColor =
     when {
-      hasTag -> tagColor.copy(alpha = 0.65f)
+      hasTag -> tagColor.copy(alpha = 0.72f)
       translation.isNotEmpty() -> KidouColors.BorderBright
       else -> KidouColors.Border
     }
@@ -99,10 +102,9 @@ fun GlyphWordTile(
     horizontalAlignment = Alignment.CenterHorizontally,
     modifier =
       modifier
-        .widthIn(min = if (compact) 34.dp else 44.dp, max = 96.dp)
-        .clip(RoundedCornerShape(2.dp))
-        .background(KidouColors.Tile)
-        .border(1.dp, borderColor, RoundedCornerShape(2.dp))
+        .widthIn(min = if (compact) 34.dp else 44.dp, max = 104.dp)
+        .background(KidouColors.Tile, RectangleShape)
+        .border(1.dp, borderColor, RectangleShape)
         .semantics { contentDescription = desc }
         .clickable(role = Role.Button, onClick = onClick)
         .padding(horizontal = hPad, vertical = vPad),
@@ -146,7 +148,9 @@ fun GlyphWordTile(
 fun GlyphSentenceRow(
   slots: List<List<String>>,
   glyphs: Map<String, GlyphGrid>,
+  words: Map<String, WordDef>,
   dictionary: Map<String, DictionaryEntry>,
+  language: AppLanguage,
   onWordClick: (String) -> Unit,
   modifier: Modifier = Modifier,
   compact: Boolean = false,
@@ -170,7 +174,9 @@ fun GlyphSentenceRow(
           GlyphWordTile(
             wordId = wordId,
             grid = glyphs[wordId],
+            wordDef = words[wordId],
             entry = dictionary[wordId],
+            language = language,
             onClick = { onWordClick(wordId) },
             compact = compact,
             glyphColor = glyphColor,

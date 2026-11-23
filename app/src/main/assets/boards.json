@@ -1,0 +1,410 @@
+{
+  "guideLines": [
+    [["n_board"], ["d_1", "d_0", "d_0"], ["m_among"], ["d_4", "d_0"], ["v_activate"], ["m_if"]],
+    [["n_board", "m_next"], ["v_open"]],
+    [["n_machine"], ["v_activate"], ["adj_complete"]]
+  ],
+  "boards": [
+    {
+      "id": 1,
+      "titleSlots": [["n_board"], ["d_1"]],
+      "requiredBoardId": null,
+      "requiredClears": 0,
+      "totalSlots": 25,
+      "storyLines": [
+        [["n_you"], ["n_ruin"], ["v_enter"]],
+        [["n_machine"], ["v_activate"]],
+        [["n_ahead"], ["v_proceed"]]
+      ],
+      "levels": [
+        {
+          "levelNumber": 1,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["button"],
+          "plates": [[["n_button"], ["v_push"], ["d_1", "m_times"]]],
+          "initialState": { "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "buttonPressesEq": 1 },
+          "completionPrimary": [["n_machine"], ["v_activate"]],
+          "completionSecondary": [["adj_complete"]]
+        },
+        {
+          "levelNumber": 2,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["button"],
+          "plates": [[["n_button"], ["v_push"], ["d_2", "m_times"]]],
+          "initialState": { "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "buttonPressesEq": 2 },
+          "completionPrimary": [["n_button"], ["v_push"], ["d_2", "m_times"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 3,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["button"],
+          "plates": [[["n_button"], ["v_push"], ["d_3", "m_times"]]],
+          "initialState": { "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "buttonPressesEq": 3 },
+          "completionPrimary": [["n_button"], ["v_push"], ["d_3", "m_times"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 4,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["button"],
+          "plates": [[["n_button"], ["v_push"], ["d_4", "m_times"]]],
+          "initialState": { "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "buttonPressesEq": 4 },
+          "completionPrimary": [["n_button"], ["v_push"], ["d_4", "m_times"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 5,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["button"],
+          "plates": [[["n_button"], ["v_push"], ["d_1", "d_0", "m_times"]]],
+          "initialState": { "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "buttonPressesEq": 5 },
+          "completionPrimary": [["n_button"], ["v_push"], ["d_1", "d_0", "m_times"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 6,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["lever", "button"],
+          "plates": [
+            [["n_lever"], ["v_pull"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "lever": "up", "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "leverEq": "down", "buttonPressesEq": 1 },
+          "completionPrimary": [["n_lever"], ["v_down"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 7,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["key", "button"],
+          "plates": [
+            [["n_key"], ["v_insert"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "key": "out", "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "keyEq": "in", "buttonPressesEq": 1 },
+          "completionPrimary": [["n_key"], ["v_insert"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 8,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["conduit", "button"],
+          "plates": [
+            [["n_conduit"], ["v_connect"]],
+            [["n_button"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "conduit": "cut", "lamp": "off", "primaryMessage": [["n_conduit"], ["v_cut"]], "secondaryMessage": [] },
+          "requirements": { "conduitEq": "connected", "buttonPressesEq": 2 },
+          "completionPrimary": [["n_conduit"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 9,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["lock", "button"],
+          "plates": [
+            [["n_lock"], ["v_unlock"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "lock": "locked", "lamp": "off", "primaryMessage": [["n_lock"], ["v_lock"]], "secondaryMessage": [] },
+          "requirements": { "lockEq": "unlocked", "buttonPressesEq": 1 },
+          "completionPrimary": [["n_gate"], ["v_open"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 10,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["lever", "key", "button"],
+          "plates": [
+            [["n_lever"], ["v_down", "m_not"]],
+            [["n_key"], ["v_remove", "m_not"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "lever": "down", "key": "out", "lamp": "amber", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "leverEq": "up", "keyEq": "in", "buttonPressesEq": 1 },
+          "completionPrimary": [["n_lever"], ["v_up"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 11,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["dial", "button"],
+          "plates": [
+            [["n_dial"], ["v_match"], ["d_3"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "dial": 0, "lamp": "off", "primaryMessage": [["n_dial"], ["d_0"]], "secondaryMessage": [] },
+          "requirements": { "dialEq": 3, "buttonPressesEq": 1 },
+          "completionPrimary": [["n_dial"], ["v_match"], ["d_3"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 12,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["dial", "button"],
+          "plates": [
+            [["n_dial"], ["v_match"], ["d_1", "d_1"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "dial": 2, "lamp": "off", "primaryMessage": [["n_dial"], ["d_2"]], "secondaryMessage": [] },
+          "requirements": { "dialEq": 6, "buttonPressesEq": 1 },
+          "completionPrimary": [["n_dial"], ["v_match"], ["d_1", "d_1"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 13,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["valve", "button"],
+          "plates": [
+            [["n_valve"], ["v_decrease"]],
+            [["n_valve"], ["v_match"], ["d_1", "d_0"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "valve": 7, "lamp": "amber", "primaryMessage": [["n_valve"], ["d_1", "d_2"]], "secondaryMessage": [] },
+          "requirements": { "valveEq": 5, "buttonPressesEq": 1 },
+          "completionPrimary": [["n_valve"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 14,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["dial", "lever", "button"],
+          "plates": [
+            [["n_dial"], ["v_match"], ["d_1", "d_4"]],
+            [["n_lever"], ["v_up"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "dial": 1, "lever": "down", "lamp": "off", "primaryMessage": [["n_dial"], ["d_1"]], "secondaryMessage": [] },
+          "requirements": { "dialEq": 9, "leverEq": "up", "buttonPressesEq": 1 },
+          "completionPrimary": [["n_dial"], ["v_match"], ["d_1", "d_4"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 15,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["conduit", "valve", "button"],
+          "plates": [
+            [["n_conduit"], ["v_connect"]],
+            [["n_valve"], ["v_match"], ["d_2", "d_0"]],
+            [["n_button"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "conduit": "cut", "valve": 3, "lamp": "off", "primaryMessage": [["n_valve"], ["d_3"]], "secondaryMessage": [] },
+          "requirements": { "conduitEq": "connected", "valveEq": 10, "buttonPressesEq": 2 },
+          "completionPrimary": [["n_conduit"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 16,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["key", "button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_key"], ["v_insert"]],
+            [["d_2", "m_ord"], ["n_button"], ["v_push"]]
+          ],
+          "initialState": { "key": "out", "lamp": "amber", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "key_insert", "repeatCount": 1, "hintPrimary": [["n_key"], ["v_insert", "m_not"]] },
+            { "trigger": "button_push", "repeatCount": 1, "hintPrimary": [["n_button"], ["v_push", "m_not"]] }
+          ],
+          "completionPrimary": [["n_key"], ["v_insert"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 17,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["conduit", "lever", "button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_conduit"], ["v_connect"]],
+            [["d_2", "m_ord"], ["n_lever"], ["v_pull"]],
+            [["d_3", "m_ord"], ["n_button"], ["v_push"]]
+          ],
+          "initialState": { "conduit": "cut", "lever": "up", "lamp": "amber", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "conduit_connect", "repeatCount": 1, "hintPrimary": [["n_conduit"], ["v_connect", "m_not"]] },
+            { "trigger": "lever_pull", "repeatCount": 1, "hintPrimary": [["n_lever"], ["v_pull", "m_not"]] },
+            { "trigger": "button_push", "repeatCount": 1, "hintPrimary": [["n_button"], ["v_push", "m_not"]] }
+          ],
+          "completionPrimary": [["n_conduit"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 18,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["key", "dial", "button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_key"], ["v_insert"]],
+            [["d_2", "m_ord"], ["n_dial"], ["v_turn"], ["d_2", "m_times"]],
+            [["d_3", "m_ord"], ["n_key"], ["v_remove"]]
+          ],
+          "initialState": { "key": "out", "dial": 0, "lamp": "amber", "primaryMessage": [["n_dial"], ["d_0"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "key_insert", "repeatCount": 1, "hintPrimary": [["n_key"], ["v_insert", "m_not"]] },
+            { "trigger": "dial_inc", "repeatCount": 2, "hintPrimary": [["n_dial"], ["v_turn", "m_not"]] },
+            { "trigger": "key_remove", "repeatCount": 1, "hintPrimary": [["n_key"], ["v_remove", "m_not"]] }
+          ],
+          "completionPrimary": [["n_key"], ["v_remove"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 19,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["lock", "valve", "lever", "button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_lock"], ["v_unlock"]],
+            [["d_2", "m_ord"], ["n_valve"], ["v_increase"], ["d_2", "m_times"]],
+            [["d_3", "m_ord"], ["n_lever"], ["v_pull"]],
+            [["d_4", "m_ord"], ["n_button"], ["v_push"]]
+          ],
+          "initialState": { "lock": "locked", "valve": 0, "lever": "up", "lamp": "amber", "primaryMessage": [["n_lock"], ["v_lock"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "lock_unlock", "repeatCount": 1, "hintPrimary": [["n_lock"], ["v_unlock", "m_not"]] },
+            { "trigger": "valve_inc", "repeatCount": 2, "hintPrimary": [["n_valve"], ["v_increase", "m_not"]] },
+            { "trigger": "lever_pull", "repeatCount": 1, "hintPrimary": [["n_lever"], ["v_pull", "m_not"]] },
+            { "trigger": "button_push", "repeatCount": 1, "hintPrimary": [["n_button"], ["v_push", "m_not"]] }
+          ],
+          "completionPrimary": [["n_gate"], ["v_open"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 20,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["conduit", "key", "lock", "button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_conduit"], ["v_connect"]],
+            [["d_2", "m_ord"], ["n_key"], ["v_insert"]],
+            [["d_3", "m_ord"], ["n_lock"], ["v_lock"]],
+            [["d_4", "m_ord"], ["n_button"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "conduit": "cut", "key": "out", "lock": "unlocked", "lamp": "amber", "primaryMessage": [["n_conduit"], ["v_cut"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "conduit_connect", "repeatCount": 1, "hintPrimary": [["n_conduit"], ["v_connect", "m_not"]] },
+            { "trigger": "key_insert", "repeatCount": 1, "hintPrimary": [["n_key"], ["v_insert", "m_not"]] },
+            { "trigger": "lock_lock", "repeatCount": 1, "hintPrimary": [["n_lock"], ["v_lock", "m_not"]] },
+            { "trigger": "button_push", "repeatCount": 2, "hintPrimary": [["n_button"], ["v_push", "m_not"]] }
+          ],
+          "completionPrimary": [["n_core"], ["v_activate"]],
+          "completionSecondary": [["adj_complete"]]
+        },
+        {
+          "levelNumber": 21,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["conduit", "dial", "button"],
+          "plates": [
+            [["n_conduit"], ["v_connect"]],
+            [["n_dial"], ["v_match"], ["d_1", "d_2"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "conduit": "cut", "dial": 0, "lamp": "off", "primaryMessage": [["n_dial"], ["d_0"]], "secondaryMessage": [] },
+          "requirements": { "conduitEq": "connected", "dialEq": 7, "buttonPressesEq": 1 },
+          "completionPrimary": [["n_dial"], ["v_match"], ["d_1", "d_2"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 22,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["lock", "key", "valve", "button"],
+          "plates": [
+            [["n_lock"], ["v_unlock"]],
+            [["n_key"], ["v_insert"]],
+            [["n_valve"], ["v_match"], ["d_2", "d_2"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "lock": "locked", "key": "out", "valve": 2, "lamp": "off", "primaryMessage": [["n_valve"], ["d_2"]], "secondaryMessage": [] },
+          "requirements": { "lockEq": "unlocked", "keyEq": "in", "valveEq": 12, "buttonPressesEq": 1 },
+          "completionPrimary": [["n_valve"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 23,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["conduit", "lever", "dial", "valve", "button"],
+          "plates": [
+            [["n_conduit"], ["v_cut", "m_not"]],
+            [["n_lever"], ["v_up"]],
+            [["n_dial"], ["v_match"], ["d_3", "d_1"]],
+            [["n_valve"], ["v_match"], ["d_1", "d_3"]],
+            [["n_button"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "conduit": "cut", "lever": "down", "dial": 5, "valve": 10, "lamp": "amber", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "conduitEq": "connected", "leverEq": "up", "dialEq": 16, "valveEq": 8, "buttonPressesEq": 1 },
+          "completionPrimary": [["n_core"], ["v_activate"]],
+          "completionSecondary": [["adj_complete"]]
+        },
+        {
+          "levelNumber": 24,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["key", "lock", "dial", "lever", "button"],
+          "plates": [
+            [["n_key"], ["v_insert"]],
+            [["n_lock"], ["v_lock"]],
+            [["n_dial"], ["v_match"], ["d_3", "d_4"]],
+            [["n_lever"], ["v_down"]],
+            [["n_button"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "key": "out", "lock": "unlocked", "dial": 10, "lever": "up", "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "keyEq": "in", "lockEq": "locked", "dialEq": 19, "leverEq": "down", "buttonPressesEq": 2 },
+          "completionPrimary": [["n_gate"], ["v_open"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 25,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["conduit", "lock", "key", "dial", "valve", "lever", "button"],
+          "plates": [
+            [["n_conduit"], ["v_connect"]],
+            [["n_lock"], ["v_unlock"]],
+            [["n_key"], ["v_insert"]],
+            [["n_dial"], ["v_match"], ["d_4", "d_0"]],
+            [["n_valve"], ["v_match"], ["d_2", "d_4"]],
+            [["n_lever"], ["v_up"]],
+            [["n_button"], ["v_push"], ["d_3", "m_times"]]
+          ],
+          "initialState": { "conduit": "cut", "lock": "locked", "key": "out", "dial": 5, "valve": 4, "lever": "down", "lamp": "amber", "primaryMessage": [["n_core"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "conduitEq": "connected", "lockEq": "unlocked", "keyEq": "in", "dialEq": 20, "valveEq": 14, "leverEq": "up", "buttonPressesEq": 3 },
+          "completionPrimary": [["n_machine", "n_core"], ["v_activate"], ["adj_complete"]],
+          "completionSecondary": [["n_board", "m_next"], ["v_open"]]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "titleSlots": [["n_board"], ["d_2"]],
+      "requiredBoardId": 1,
+      "requiredClears": 20,
+      "totalSlots": 25,
+      "storyLines": [
+        [["n_gate"], ["v_open"]],
+        [["n_core"], ["n_conduit"], ["v_flow"]],
+        [["n_ahead"], ["v_proceed"]]
+      ],
+      "levels": [
+        {
+          "levelNumber": 1,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["conduit", "lock", "key", "dial", "valve", "lever", "button"],
+          "plates": [
+            [["n_conduit"], ["v_connect"]],
+            [["n_lock"], ["v_lock"]],
+            [["n_key"], ["v_insert"]],
+            [["n_dial"], ["v_match"], ["d_1", "d_0", "d_0"]],
+            [["n_valve"], ["v_match"], ["d_3", "d_2"]],
+            [["n_lever"], ["v_down"]],
+            [["n_button"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "conduit": "cut", "lock": "unlocked", "key": "out", "dial": 10, "valve": 5, "lever": "up", "lamp": "amber", "primaryMessage": [["n_core"], ["v_stop"]], "secondaryMessage": [["n_lamp"], ["v_close"]] },
+          "requirements": { "conduitEq": "connected", "lockEq": "locked", "keyEq": "in", "dialEq": 25, "valveEq": 17, "leverEq": "down", "buttonPressesEq": 2 },
+          "completionPrimary": [["n_core"], ["v_activate"], ["adj_complete"]],
+          "completionSecondary": [["n_lamp"], ["v_open"]]
+        }
+      ]
+    }
+  ]
+}

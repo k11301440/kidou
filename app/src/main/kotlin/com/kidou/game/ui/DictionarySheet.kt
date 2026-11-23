@@ -27,17 +27,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidou.game.model.AppLanguage
 import com.kidou.game.model.DictionaryEntry
+import com.kidou.game.model.EntrySource
 import com.kidou.game.model.GlyphGrid
 import com.kidou.game.model.WordColorTag
+import com.kidou.game.model.WordDef
 import com.kidou.game.ui.components.PixelGlyph
+import com.kidou.game.ui.i18n.UiStrings
+import com.kidou.game.ui.i18n.stringsFor
 import com.kidou.game.ui.theme.KidouColors
 import com.kidou.game.viewmodel.DictionaryTab
 import com.kidou.game.viewmodel.GameUiState
@@ -56,6 +61,8 @@ fun DictionarySheet(
   onDismiss: () -> Unit,
 ) {
   val data = uiState.gameData ?: return
+  val strings = stringsFor(uiState.language)
+  val stats = uiState.translationStats
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var filterMode by remember { mutableStateOf(DictFilter.ALL) }
   var tagFilter by remember { mutableStateOf<WordColorTag?>(null) }
@@ -69,8 +76,9 @@ fun DictionarySheet(
   val displayedWordIds =
     baseWordIds.filter { wordId ->
       val entry = uiState.dictionary[wordId]
-      val matchesUnreg =
-        filterMode == DictFilter.ALL || entry == null || entry.translation.isBlank()
+      val wordDef = data.words[wordId]
+      val resolved = entry?.resolvedTranslation(wordDef, uiState.language).orEmpty()
+      val matchesUnreg = filterMode == DictFilter.ALL || resolved.isBlank()
       val matchesTag =
         tagFilter == null || (entry?.colorTag ?: WordColorTag.UNCLASSIFIED) == tagFilter
       matchesUnreg && matchesTag
@@ -81,7 +89,7 @@ fun DictionarySheet(
     sheetState = sheetState,
     containerColor = KidouColors.Panel,
     contentColor = KidouColors.Glyph,
-    shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
+    shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp),
   ) {
     Column(
       modifier =
@@ -97,15 +105,14 @@ fun DictionarySheet(
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Text(
-          text = "辞書",
+          text = strings.dictionary,
           fontFamily = FontFamily.Monospace,
           fontWeight = FontWeight.Bold,
           fontSize = 18.sp,
           color = KidouColors.Glyph,
         )
         Text(
-          text =
-            "登録 ${uiState.registeredCount} / ${uiState.discoveredWordIds.size}語 (${uiState.decodeRatePercent}%)",
+          text = strings.registeredStats(stats.translatedCount, stats.totalCount, stats.percent),
           fontFamily = FontFamily.Monospace,
           fontSize = 12.sp,
           color = KidouColors.Amber,
@@ -117,13 +124,13 @@ fun DictionarySheet(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
       ) {
         TabPill(
-          label = "この画面 (${uiState.screenWordIds.size})",
+          label = "${strings.tabThisScreen} (${uiState.screenWordIds.size})",
           selected = uiState.dictionaryTab == DictionaryTab.SCREEN,
           onClick = { onSelectTab(DictionaryTab.SCREEN) },
           modifier = Modifier.weight(1f),
         )
         TabPill(
-          label = "全単語 (${uiState.discoveredWordIds.size})",
+          label = "${strings.tabAllWords} (${uiState.discoveredWordIds.size})",
           selected = uiState.dictionaryTab == DictionaryTab.ALL,
           onClick = { onSelectTab(DictionaryTab.ALL) },
           modifier = Modifier.weight(1f),
@@ -135,7 +142,7 @@ fun DictionarySheet(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
       ) {
         FilterChipBox(
-          label = "すべて",
+          label = strings.filterAll,
           selected = filterMode == DictFilter.ALL && tagFilter == null,
           color = KidouColors.Glyph,
           onClick = {
@@ -144,7 +151,7 @@ fun DictionarySheet(
           },
         )
         FilterChipBox(
-          label = "未登録",
+          label = strings.filterUnregistered,
           selected = filterMode == DictFilter.UNREGISTERED,
           color = KidouColors.Amber,
           onClick = {
@@ -154,7 +161,7 @@ fun DictionarySheet(
         )
         WordColorTag.entries.forEach { tag ->
           FilterChipBox(
-            label = tag.label,
+            label = tag.label(uiState.language),
             selected = tagFilter == tag,
             color = Color(tag.colorHex),
             onClick = { tagFilter = if (tagFilter == tag) null else tag },
@@ -169,7 +176,10 @@ fun DictionarySheet(
         items(displayedWordIds, key = { it }) { wordId ->
           DictionaryWordRow(
             grid = data.glyphs[wordId],
+            wordDef = data.words[wordId],
             entry = uiState.dictionary[wordId],
+            language = uiState.language,
+            strings = strings,
             onClick = { onEditWord(wordId) },
           )
         }
@@ -189,12 +199,11 @@ private fun TabPill(
     contentAlignment = Alignment.Center,
     modifier =
       modifier
-        .clip(RoundedCornerShape(2.dp))
-        .background(if (selected) KidouColors.Amber.copy(alpha = 0.16f) else KidouColors.Tile)
+        .background(if (selected) KidouColors.Amber.copy(alpha = 0.16f) else KidouColors.Tile, RectangleShape)
         .border(
-          1.dp,
+          1.5.dp,
           if (selected) KidouColors.Amber else KidouColors.Border,
-          RoundedCornerShape(2.dp),
+          RectangleShape,
         )
         .clickable(onClick = onClick)
         .padding(vertical = 8.dp),
@@ -219,12 +228,11 @@ private fun FilterChipBox(
   Box(
     modifier =
       Modifier
-        .clip(RoundedCornerShape(2.dp))
-        .background(if (selected) color.copy(alpha = 0.18f) else KidouColors.PanelSunken)
+        .background(if (selected) color.copy(alpha = 0.18f) else KidouColors.PanelSunken, RectangleShape)
         .border(
           1.dp,
           if (selected) color else KidouColors.Border,
-          RoundedCornerShape(2.dp),
+          RectangleShape,
         )
         .clickable(onClick = onClick)
         .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -241,13 +249,23 @@ private fun FilterChipBox(
 @Composable
 private fun DictionaryWordRow(
   grid: GlyphGrid?,
+  wordDef: WordDef?,
   entry: DictionaryEntry?,
+  language: AppLanguage,
+  strings: UiStrings,
   onClick: () -> Unit,
 ) {
   val tag = entry?.colorTag ?: WordColorTag.UNCLASSIFIED
   val tagColor = Color(tag.colorHex)
-  val translation = entry?.translation?.trim().orEmpty()
+  val translation = entry?.resolvedTranslation(wordDef, language)?.trim().orEmpty()
   val memo = entry?.memo?.trim().orEmpty()
+  val sourceBadge =
+    when (entry?.source) {
+      EntrySource.DEFAULT_SET -> strings.defaultSetBadge
+      EntrySource.AD_REVEALED -> strings.adRevealedBadge
+      EntrySource.DEBUG_BULK -> strings.debugBulkBadge
+      else -> null
+    }
 
   Row(
     verticalAlignment = Alignment.CenterVertically,
@@ -255,9 +273,8 @@ private fun DictionaryWordRow(
     modifier =
       Modifier
         .fillMaxWidth()
-        .clip(RoundedCornerShape(2.dp))
-        .background(KidouColors.Tile)
-        .border(1.dp, KidouColors.Border, RoundedCornerShape(2.dp))
+        .background(KidouColors.Tile, RectangleShape)
+        .border(1.dp, KidouColors.Border, RectangleShape)
         .clickable(onClick = onClick)
         .padding(10.dp),
   ) {
@@ -266,8 +283,8 @@ private fun DictionaryWordRow(
       modifier =
         Modifier
           .size(44.dp)
-          .background(KidouColors.PanelSunken, RoundedCornerShape(2.dp))
-          .border(1.dp, tagColor.copy(alpha = 0.5f), RoundedCornerShape(2.dp)),
+          .background(KidouColors.PanelSunken, RectangleShape)
+          .border(1.dp, tagColor.copy(alpha = 0.5f), RectangleShape),
     ) {
       PixelGlyph(grid = grid, size = 30.dp, color = KidouColors.Glyph)
     }
@@ -275,10 +292,10 @@ private fun DictionaryWordRow(
     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
       ) {
         Text(
-          text = if (translation.isNotEmpty()) translation else "未登録",
+          text = translation.ifEmpty { strings.unregistered },
           color = if (translation.isNotEmpty()) KidouColors.Glyph else KidouColors.Muted,
           fontFamily = FontFamily.Monospace,
           fontWeight = FontWeight.Bold,
@@ -288,14 +305,26 @@ private fun DictionaryWordRow(
         )
         if (tag != WordColorTag.UNCLASSIFIED) {
           Text(
-            text = tag.label,
+            text = tag.label(language),
             color = tagColor,
             fontFamily = FontFamily.Monospace,
             fontSize = 10.sp,
             modifier =
               Modifier
-                .border(1.dp, tagColor.copy(alpha = 0.6f), RoundedCornerShape(2.dp))
-                .padding(horizontal = 5.dp, vertical = 1.dp),
+                .border(1.dp, tagColor.copy(alpha = 0.6f), RectangleShape)
+                .padding(horizontal = 4.dp, vertical = 1.dp),
+          )
+        }
+        if (sourceBadge != null) {
+          Text(
+            text = sourceBadge,
+            color = KidouColors.Cyan,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 9.sp,
+            modifier =
+              Modifier
+                .border(1.dp, KidouColors.Cyan.copy(alpha = 0.5f), RectangleShape)
+                .padding(horizontal = 4.dp, vertical = 1.dp),
           )
         }
       }
@@ -312,7 +341,7 @@ private fun DictionaryWordRow(
     }
 
     Text(
-      text = "編集",
+      text = strings.edit,
       color = KidouColors.Amber,
       fontFamily = FontFamily.Monospace,
       fontSize = 11.sp,

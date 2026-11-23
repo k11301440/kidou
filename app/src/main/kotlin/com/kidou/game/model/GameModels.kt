@@ -11,88 +11,112 @@ data class GlyphGrid(
   }
 }
 
+enum class AppLanguage(val code: String) {
+  JA("ja"),
+  EN("en"),
+}
+
+enum class EntrySource {
+  PLAYER,
+  DEFAULT_SET,
+  AD_REVEALED,
+  DEBUG_BULK,
+}
+
 data class WordDef(
   val id: String,
   val glyphId: String,
-  val internalMeaning: String,
+  val meaningJa: String,
+  val meaningEn: String,
   val pos: String,
   val morphemes: List<String> = emptyList(),
-)
-
-data class MachineDef(
-  val machineNameSlots: List<List<String>>,
-  val phases: List<PhaseDef>,
+  val isDefaultSet: Boolean = false,
 ) {
-  fun phaseByNumber(phaseNumber: Int): PhaseDef =
-    phases.firstOrNull { it.phase == phaseNumber } ?: phases.first()
+  fun meaning(language: AppLanguage): String =
+    when (language) {
+      AppLanguage.JA -> meaningJa
+      AppLanguage.EN -> meaningEn
+    }
 }
 
-data class PhaseDef(
-  val phase: Int,
-  val unlockedControls: List<String>,
-  val plates: List<List<List<String>>>,
-  val initialState: PhaseInitialState,
-  val totalSeqSteps: Int = 0,
-  val rules: List<TransitionRule>,
+data class BoardCollectionDef(
+  val guideLines: List<List<List<String>>> = emptyList(),
+  val boards: List<BoardDef> = emptyList(),
+) {
+  fun boardById(id: Int): BoardDef = boards.firstOrNull { it.id == id } ?: boards.first()
+}
+
+data class BoardDef(
+  val id: Int,
+  val titleSlots: List<List<String>>,
+  val requiredBoardId: Int? = null,
+  val requiredClears: Int = 0,
+  val totalSlots: Int = 25,
+  val storyLines: List<List<List<String>>> = emptyList(),
+  val levels: List<LevelDef> = emptyList(),
+) {
+  fun levelByNumber(levelNumber: Int): LevelDef? =
+    levels.firstOrNull { it.levelNumber == levelNumber }
+}
+
+enum class PuzzleType {
+  CONDITION,
+  SEQUENCE,
+}
+
+data class LevelDef(
+  val levelNumber: Int,
+  val puzzleType: PuzzleType = PuzzleType.CONDITION,
+  val unlockedControls: List<String> = emptyList(),
+  val plates: List<List<List<String>>> = emptyList(),
+  val initialState: LevelInitialState = LevelInitialState(),
+  val requirements: ConditionRequirement? = null,
+  val sequenceSteps: List<SequenceStepDef> = emptyList(),
+  val completionPrimary: List<List<String>> = emptyList(),
+  val completionSecondary: List<List<String>> = emptyList(),
 )
 
-data class PhaseInitialState(
+data class LevelInitialState(
   val lever: String = "up",
-  val dial: Int = 1,
   val key: String = "out",
   val conduit: String = "cut",
-  val buttonPresses: Int = 0,
-  val dialTurns: Int = 0,
-  val seqStep: Int = 0,
+  val lock: String = "locked",
+  val dial: Int = 0,
+  val valve: Int = 0,
   val lamp: String = "off",
   val primaryMessage: List<List<String>> = emptyList(),
   val secondaryMessage: List<List<String>> = emptyList(),
 )
 
-data class TransitionRule(
-  val trigger: String,
-  val conditions: ConditionSpec = ConditionSpec(),
-  val effects: EffectSpec,
-)
-
-data class ConditionSpec(
-  val buttonPressesEq: Int? = null,
+data class ConditionRequirement(
   val leverEq: String? = null,
-  val dialEq: Int? = null,
-  val dialLt: Int? = null,
-  val dialGt: Int? = null,
   val keyEq: String? = null,
   val conduitEq: String? = null,
-  val seqStepEq: Int? = null,
-  val dialTurnsEq: Int? = null,
-  val dialTurnsLt: Int? = null,
+  val lockEq: String? = null,
+  val dialEq: Int? = null,
+  val valveEq: Int? = null,
+  val buttonPressesEq: Int? = null,
 )
 
-data class EffectSpec(
-  val setLever: String? = null,
-  val setKey: String? = null,
-  val setConduit: String? = null,
-  val setButtonPresses: Int? = null,
-  val setDialTurns: Int? = null,
-  val incrementDialTurns: Int? = null,
-  val incrementDialWrap: Int? = null,
-  val setSeqStep: Int? = null,
-  val resetPhase4: Boolean? = null,
-  val lamp: String? = null,
-  val sound: String? = null,
-  val advanceToPhase: Int? = null,
-  val completeGame: Boolean? = null,
-  val primaryMessage: List<List<String>> = emptyList(),
-  val secondaryMessage: List<List<String>> = emptyList(),
+data class SequenceStepDef(
+  val trigger: String,
+  val repeatCount: Int = 1,
+  val hintPrimary: List<List<String>> = emptyList(),
 )
 
-enum class WordColorTag(val label: String, val colorHex: Long) {
-  UNCLASSIFIED("未分類", 0xFF8B969E),
-  HYPOTHESIS("仮説", 0xFFF2B84B),
-  CONFIRMED("確信", 0xFF5EEB8F),
-  OBJECT("対象", 0xFF58C4DD),
-  ACTION("操作", 0xFFB892FF),
-  MODIFIER("状態/数", 0xFFE87E6B),
+enum class WordColorTag(val labelJa: String, val labelEn: String, val colorHex: Long) {
+  UNCLASSIFIED("未分類", "None", 0xFF8B969E),
+  HYPOTHESIS("仮説", "Guess", 0xFFF2B84B),
+  CONFIRMED("確信", "Sure", 0xFF5EEB8F),
+  OBJECT("対象", "Object", 0xFF58C4DD),
+  ACTION("操作", "Action", 0xFFB892FF),
+  MODIFIER("状態/数", "Mod/Num", 0xFFE87E6B);
+
+  fun label(language: AppLanguage): String =
+    when (language) {
+      AppLanguage.JA -> labelJa
+      AppLanguage.EN -> labelEn
+    }
 }
 
 data class DictionaryEntry(
@@ -100,7 +124,17 @@ data class DictionaryEntry(
   val translation: String = "",
   val colorTag: WordColorTag = WordColorTag.UNCLASSIFIED,
   val memo: String = "",
-)
+  val source: EntrySource = EntrySource.PLAYER,
+) {
+  fun resolvedTranslation(wordDef: WordDef?, language: AppLanguage): String {
+    return when (source) {
+      EntrySource.PLAYER -> translation
+      EntrySource.DEFAULT_SET,
+      EntrySource.AD_REVEALED,
+      EntrySource.DEBUG_BULK -> wordDef?.meaning(language) ?: translation
+    }
+  }
+}
 
 enum class LampState {
   OFF,
@@ -126,26 +160,14 @@ enum class SoundEffect {
   CHIME,
   WARN,
   PHASE_CLEAR,
-  CORE_ACTIVATE;
-
-  companion object {
-    fun fromWire(value: String?): SoundEffect =
-      when (value?.lowercase()) {
-        "clunk" -> CLUNK
-        "ratchet" -> RATCHET
-        "chime" -> CHIME
-        "warn" -> WARN
-        "phase_clear" -> PHASE_CLEAR
-        "core_activate" -> CORE_ACTIVATE
-        else -> CLICK
-      }
-  }
+  CORE_ACTIVATE,
 }
 
 data class OperationLogEntry(
   val id: Long,
   val timestampMs: Long,
-  val phase: Int,
+  val boardId: Int,
+  val levelNumber: Int,
   val trigger: String,
   val actionLabelSlots: List<List<String>>,
   val resultPrimarySlots: List<List<String>>,
@@ -153,33 +175,47 @@ data class OperationLogEntry(
   val lamp: LampState,
 )
 
-data class MachineRuntimeState(
-  val currentPhase: Int = 1,
-  val maxUnlockedPhase: Int = 1,
-  val isFullyActivated: Boolean = false,
+data class LevelRuntimeState(
+  val boardId: Int = 1,
+  val levelNumber: Int = 1,
   val lever: String = "up",
-  val dial: Int = 1,
   val key: String = "out",
   val conduit: String = "cut",
+  val lock: String = "locked",
+  val dial: Int = 0,
+  val valve: Int = 0,
   val buttonPresses: Int = 0,
-  val dialTurns: Int = 0,
   val seqStep: Int = 0,
+  val seqSubProgress: Int = 0,
+  val isCleared: Boolean = false,
   val lamp: LampState = LampState.OFF,
   val primaryMessage: List<List<String>> = emptyList(),
   val secondaryMessage: List<List<String>> = emptyList(),
 )
 
-data class SaveData(
+data class TranslationStats(
+  val translatedCount: Int,
+  val totalCount: Int,
+  val percent: Int,
+)
+
+data class SaveDataV2(
   val dictionary: Map<String, DictionaryEntry> = emptyMap(),
   val discoveredWordIds: Set<String> = emptySet(),
-  val machineState: MachineRuntimeState = MachineRuntimeState(),
+  val clearedLevelKeys: Set<String> = emptySet(),
   val operationLog: List<OperationLogEntry> = emptyList(),
   val soundEnabled: Boolean = true,
+  val bgmEnabled: Boolean = true,
+  val language: AppLanguage = AppLanguage.JA,
+  val selectedBoardId: Int = 1,
 )
 
 data class LoadedGameData(
   val glyphs: Map<String, GlyphGrid>,
   val words: Map<String, WordDef>,
   val wordOrder: List<String>,
-  val machine: MachineDef,
-)
+  val boardCollection: BoardCollectionDef,
+) {
+  val defaultSetWordIds: Set<String> =
+    words.values.filter { it.isDefaultSet }.map { it.id }.toSet()
+}

@@ -3,24 +3,33 @@ package com.kidou.game.data
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.kidou.game.model.SaveData
+import com.kidou.game.model.AppLanguage
+import com.kidou.game.model.SaveDataV2
 import java.io.File
 
 class SaveRepository(context: Context) {
-  private val saveFile = File(context.filesDir, "kidou_save.json")
-  private val tempFile = File(context.filesDir, "kidou_save.tmp")
+  private val saveFile = File(context.filesDir, "kidou_save_v2.json")
+  private val tempFile = File(context.filesDir, "kidou_save_v2.tmp")
   private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
 
-  fun load(): SaveData? {
+  @Suppress("USELESS_ELVIS")
+  fun load(): SaveDataV2? {
     if (!saveFile.exists()) return null
     return runCatching {
       saveFile.readText(Charsets.UTF_8).let { text ->
-        gson.fromJson(text, SaveData::class.java)
+        val raw = gson.fromJson(text, SaveDataV2::class.java) ?: return null
+        raw.copy(
+          dictionary = raw.dictionary ?: emptyMap(),
+          discoveredWordIds = raw.discoveredWordIds ?: emptySet(),
+          clearedLevelKeys = raw.clearedLevelKeys ?: emptySet(),
+          operationLog = raw.operationLog ?: emptyList(),
+          language = raw.language ?: AppLanguage.JA,
+        )
       }
     }.getOrNull()
   }
 
-  fun save(data: SaveData) {
+  fun save(data: SaveDataV2) {
     runCatching {
       val json = gson.toJson(data)
       tempFile.writeText(json, Charsets.UTF_8)
