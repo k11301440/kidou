@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.kidou.game.ui.components.GlyphSentenceRow
 import com.kidou.game.ui.components.PixelCrtDisplay
 import com.kidou.game.ui.i18n.stringsFor
-import com.kidou.game.ui.theme.KidouColors
+import com.kidou.game.ui.theme.KidouTheme
 import com.kidou.game.viewmodel.GameUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,6 +29,7 @@ fun StorySheet(
   onDismiss: () -> Unit,
 ) {
   val data = uiState.gameData ?: return
+  val palette = KidouTheme.palette
   val boardDef = data.boardCollection.boardById(uiState.selectedBoardId)
   val strings = stringsFor(uiState.language)
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -36,8 +37,8 @@ fun StorySheet(
   ModalBottomSheet(
     onDismissRequest = onDismiss,
     sheetState = sheetState,
-    containerColor = KidouColors.Panel,
-    contentColor = KidouColors.Glyph,
+    containerColor = palette.panel,
+    contentColor = palette.glyph,
     shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp),
   ) {
     Column(
@@ -49,10 +50,10 @@ fun StorySheet(
         fontFamily = FontFamily.Monospace,
         fontWeight = FontWeight.Bold,
         fontSize = 17.sp,
-        color = KidouColors.Cyan,
+        color = palette.accentSecondary,
       )
 
-      PixelCrtDisplay(borderColor = KidouColors.Cyan.copy(alpha = 0.7f)) {
+      PixelCrtDisplay(borderColor = palette.accentSecondary.copy(alpha = 0.7f)) {
         boardDef.storyLines.forEach { lineSlots ->
           GlyphSentenceRow(
             slots = lineSlots,
@@ -67,7 +68,7 @@ fun StorySheet(
 
       Text(
         text = if (boardDef.id == 1) strings.storyDefaultNote else strings.storyUnregisteredNote,
-        color = KidouColors.Muted,
+        color = palette.muted,
         fontFamily = FontFamily.Monospace,
         fontSize = 12.sp,
       )

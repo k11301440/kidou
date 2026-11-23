@@ -51,5 +51,15 @@
   { "id": "m_if", "glyphId": "m_if", "meaningJa": "なら", "meaningEn": "if", "pos": "modifier", "morphemes": ["condition"], "isDefaultSet": false },
   { "id": "m_next", "glyphId": "m_next", "meaningJa": "次", "meaningEn": "next", "pos": "modifier", "morphemes": ["next"], "isDefaultSet": false },
   { "id": "adj_danger", "glyphId": "adj_danger", "meaningJa": "警告", "meaningEn": "alert", "pos": "modifier", "morphemes": ["hazard"], "isDefaultSet": false },
-  { "id": "adj_complete", "glyphId": "adj_complete", "meaningJa": "完了", "meaningEn": "done", "pos": "modifier", "morphemes": ["complete"], "isDefaultSet": false }
+  { "id": "adj_complete", "glyphId": "adj_complete", "meaningJa": "完了", "meaningEn": "done", "pos": "modifier", "morphemes": ["complete"], "isDefaultSet": false },
+
+  { "id": "n_switch", "glyphId": "n_switch", "meaningJa": "スイッチ", "meaningEn": "switch", "pos": "noun", "morphemes": ["switch"], "isDefaultSet": false },
+  { "id": "n_slider", "glyphId": "n_slider", "meaningJa": "スライド", "meaningEn": "slider", "pos": "noun", "morphemes": ["slider"], "isDefaultSet": false },
+  { "id": "op_and", "glyphId": "op_and", "meaningJa": "かつ", "meaningEn": "and", "pos": "modifier", "morphemes": ["logic", "and"], "isDefaultSet": false },
+  { "id": "op_or", "glyphId": "op_or", "meaningJa": "または", "meaningEn": "or", "pos": "modifier", "morphemes": ["logic", "or"], "isDefaultSet": false },
+  { "id": "v_hold", "glyphId": "v_hold", "meaningJa": "長押し", "meaningEn": "hold", "pos": "verb", "morphemes": ["push", "hold"], "isDefaultSet": false },
+  { "id": "v_swipe", "glyphId": "v_swipe", "meaningJa": "なぞる", "meaningEn": "swipe", "pos": "verb", "morphemes": ["swipe"], "isDefaultSet": false },
+  { "id": "m_together", "glyphId": "m_together", "meaningJa": "同時に", "meaningEn": "together", "pos": "modifier", "morphemes": ["together"], "isDefaultSet": false },
+  { "id": "v_left", "glyphId": "v_left", "meaningJa": "左", "meaningEn": "left", "pos": "verb", "morphemes": ["dir", "left"], "isDefaultSet": false },
+  { "id": "v_right", "glyphId": "v_right", "meaningJa": "右", "meaningEn": "right", "pos": "verb", "morphemes": ["dir", "right"], "isDefaultSet": false }
 ]

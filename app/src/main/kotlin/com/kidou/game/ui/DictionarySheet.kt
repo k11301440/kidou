@@ -43,7 +43,7 @@ import com.kidou.game.model.WordDef
 import com.kidou.game.ui.components.PixelGlyph
 import com.kidou.game.ui.i18n.UiStrings
 import com.kidou.game.ui.i18n.stringsFor
-import com.kidou.game.ui.theme.KidouColors
+import com.kidou.game.ui.theme.KidouTheme
 import com.kidou.game.viewmodel.DictionaryTab
 import com.kidou.game.viewmodel.GameUiState
 
@@ -61,6 +61,7 @@ fun DictionarySheet(
   onDismiss: () -> Unit,
 ) {
   val data = uiState.gameData ?: return
+  val palette = KidouTheme.palette
   val strings = stringsFor(uiState.language)
   val stats = uiState.translationStats
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -87,8 +88,8 @@ fun DictionarySheet(
   ModalBottomSheet(
     onDismissRequest = onDismiss,
     sheetState = sheetState,
-    containerColor = KidouColors.Panel,
-    contentColor = KidouColors.Glyph,
+    containerColor = palette.panel,
+    contentColor = palette.glyph,
     shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp),
   ) {
     Column(
@@ -109,13 +110,13 @@ fun DictionarySheet(
           fontFamily = FontFamily.Monospace,
           fontWeight = FontWeight.Bold,
           fontSize = 18.sp,
-          color = KidouColors.Glyph,
+          color = palette.glyph,
         )
         Text(
           text = strings.registeredStats(stats.translatedCount, stats.totalCount, stats.percent),
           fontFamily = FontFamily.Monospace,
           fontSize = 12.sp,
-          color = KidouColors.Amber,
+          color = palette.accentPrimary,
         )
       }
 
@@ -144,7 +145,7 @@ fun DictionarySheet(
         FilterChipBox(
           label = strings.filterAll,
           selected = filterMode == DictFilter.ALL && tagFilter == null,
-          color = KidouColors.Glyph,
+          color = palette.glyph,
           onClick = {
             filterMode = DictFilter.ALL
             tagFilter = null
@@ -153,7 +154,7 @@ fun DictionarySheet(
         FilterChipBox(
           label = strings.filterUnregistered,
           selected = filterMode == DictFilter.UNREGISTERED,
-          color = KidouColors.Amber,
+          color = palette.accentPrimary,
           onClick = {
             filterMode =
               if (filterMode == DictFilter.UNREGISTERED) DictFilter.ALL else DictFilter.UNREGISTERED
@@ -163,7 +164,7 @@ fun DictionarySheet(
           FilterChipBox(
             label = tag.label(uiState.language),
             selected = tagFilter == tag,
-            color = Color(tag.colorHex),
+            color = palette.tagColor(tag),
             onClick = { tagFilter = if (tagFilter == tag) null else tag },
           )
         }
@@ -195,14 +196,18 @@ private fun TabPill(
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val palette = KidouTheme.palette
   Box(
     contentAlignment = Alignment.Center,
     modifier =
       modifier
-        .background(if (selected) KidouColors.Amber.copy(alpha = 0.16f) else KidouColors.Tile, RectangleShape)
+        .background(
+          if (selected) palette.accentPrimary.copy(alpha = 0.16f) else palette.tile,
+          RectangleShape,
+        )
         .border(
           1.5.dp,
-          if (selected) KidouColors.Amber else KidouColors.Border,
+          if (selected) palette.accentPrimary else palette.border,
           RectangleShape,
         )
         .clickable(onClick = onClick)
@@ -210,7 +215,7 @@ private fun TabPill(
   ) {
     Text(
       text = label,
-      color = if (selected) KidouColors.Amber else KidouColors.Muted,
+      color = if (selected) palette.accentPrimary else palette.muted,
       fontFamily = FontFamily.Monospace,
       fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
       fontSize = 12.sp,
@@ -225,13 +230,14 @@ private fun FilterChipBox(
   color: Color,
   onClick: () -> Unit,
 ) {
+  val palette = KidouTheme.palette
   Box(
     modifier =
       Modifier
-        .background(if (selected) color.copy(alpha = 0.18f) else KidouColors.PanelSunken, RectangleShape)
+        .background(if (selected) color.copy(alpha = 0.18f) else palette.panelSunken, RectangleShape)
         .border(
           1.dp,
-          if (selected) color else KidouColors.Border,
+          if (selected) color else palette.border,
           RectangleShape,
         )
         .clickable(onClick = onClick)
@@ -239,7 +245,7 @@ private fun FilterChipBox(
   ) {
     Text(
       text = label,
-      color = if (selected) color else KidouColors.Muted,
+      color = if (selected) color else palette.muted,
       fontFamily = FontFamily.Monospace,
       fontSize = 11.sp,
     )
@@ -255,8 +261,9 @@ private fun DictionaryWordRow(
   strings: UiStrings,
   onClick: () -> Unit,
 ) {
+  val palette = KidouTheme.palette
   val tag = entry?.colorTag ?: WordColorTag.UNCLASSIFIED
-  val tagColor = Color(tag.colorHex)
+  val tagColor = palette.tagColor(tag)
   val translation = entry?.resolvedTranslation(wordDef, language)?.trim().orEmpty()
   val memo = entry?.memo?.trim().orEmpty()
   val sourceBadge =
@@ -273,8 +280,8 @@ private fun DictionaryWordRow(
     modifier =
       Modifier
         .fillMaxWidth()
-        .background(KidouColors.Tile, RectangleShape)
-        .border(1.dp, KidouColors.Border, RectangleShape)
+        .background(palette.tile, RectangleShape)
+        .border(1.dp, palette.border, RectangleShape)
         .clickable(onClick = onClick)
         .padding(10.dp),
   ) {
@@ -283,10 +290,10 @@ private fun DictionaryWordRow(
       modifier =
         Modifier
           .size(44.dp)
-          .background(KidouColors.PanelSunken, RectangleShape)
-          .border(1.dp, tagColor.copy(alpha = 0.5f), RectangleShape),
+          .background(palette.panelSunken, RectangleShape)
+          .border(1.dp, tagColor.copy(alpha = 0.55f), RectangleShape),
     ) {
-      PixelGlyph(grid = grid, size = 30.dp, color = KidouColors.Glyph)
+      PixelGlyph(grid = grid, size = 30.dp, color = palette.glyph)
     }
 
     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -296,7 +303,7 @@ private fun DictionaryWordRow(
       ) {
         Text(
           text = translation.ifEmpty { strings.unregistered },
-          color = if (translation.isNotEmpty()) KidouColors.Glyph else KidouColors.Muted,
+          color = if (translation.isNotEmpty()) palette.glyph else palette.muted,
           fontFamily = FontFamily.Monospace,
           fontWeight = FontWeight.Bold,
           fontSize = 14.sp,
@@ -318,12 +325,12 @@ private fun DictionaryWordRow(
         if (sourceBadge != null) {
           Text(
             text = sourceBadge,
-            color = KidouColors.Cyan,
+            color = palette.accentSecondary,
             fontFamily = FontFamily.Monospace,
             fontSize = 9.sp,
             modifier =
               Modifier
-                .border(1.dp, KidouColors.Cyan.copy(alpha = 0.5f), RectangleShape)
+                .border(1.dp, palette.accentSecondary.copy(alpha = 0.55f), RectangleShape)
                 .padding(horizontal = 4.dp, vertical = 1.dp),
           )
         }
@@ -331,7 +338,7 @@ private fun DictionaryWordRow(
       if (memo.isNotEmpty()) {
         Text(
           text = memo,
-          color = KidouColors.Muted,
+          color = palette.muted,
           fontFamily = FontFamily.Monospace,
           fontSize = 11.sp,
           maxLines = 1,
@@ -342,7 +349,7 @@ private fun DictionaryWordRow(
 
     Text(
       text = strings.edit,
-      color = KidouColors.Amber,
+      color = palette.accentPrimary,
       fontFamily = FontFamily.Monospace,
       fontSize = 11.sp,
     )

@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
 import com.kidou.game.ads.AdLoadState
 import com.kidou.game.ads.RewardedAdManager
 import com.kidou.game.audio.BgmPlayer
@@ -22,10 +21,13 @@ import com.kidou.game.model.SaveDataV2
 import com.kidou.game.model.SoundEffect
 import com.kidou.game.model.TranslationStats
 import com.kidou.game.model.WordColorTag
+import com.kidou.game.ui.theme.ColorTheme
+import com.kidou.game.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 enum class ScreenRoute {
   TITLE,
@@ -39,7 +41,6 @@ enum class DictionaryTab {
 }
 
 enum class MenuTab {
-  LOG,
   PROGRESS,
   SETTINGS,
 }
@@ -57,11 +58,13 @@ data class GameUiState(
   val soundEnabled: Boolean = true,
   val bgmEnabled: Boolean = true,
   val language: AppLanguage = AppLanguage.JA,
+  val themeMode: ThemeMode = ThemeMode.DARK,
+  val colorTheme: ColorTheme = ColorTheme.AMBER_RUIN,
   val editingWordId: String? = null,
   val showDictionary: Boolean = false,
   val dictionaryTab: DictionaryTab = DictionaryTab.SCREEN,
   val showMenu: Boolean = false,
-  val menuTab: MenuTab = MenuTab.LOG,
+  val menuTab: MenuTab = MenuTab.PROGRESS,
   val showStory: Boolean = false,
   val showGuide: Boolean = false,
   val adLoadState: AdLoadState = AdLoadState.IDLE,
@@ -76,10 +79,19 @@ data class GameUiState(
   val board1Clears: Int
     get() = LevelEngine.countBoardClears(1, clearedLevelKeys)
 
+  val board2Clears: Int
+    get() = LevelEngine.countBoardClears(2, clearedLevelKeys)
+
   val isBoard2Unlocked: Boolean
     get() {
       val board2 = gameData?.boardCollection?.boards?.firstOrNull { it.id == 2 } ?: return false
       return LevelEngine.isBoardUnlocked(board2, clearedLevelKeys)
+    }
+
+  val isBoard3Unlocked: Boolean
+    get() {
+      val board3 = gameData?.boardCollection?.boards?.firstOrNull { it.id == 3 } ?: return false
+      return LevelEngine.isBoardUnlocked(board3, clearedLevelKeys)
     }
 }
 
@@ -138,6 +150,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       soundEnabled = saved?.soundEnabled ?: true,
       bgmEnabled = saved?.bgmEnabled ?: true,
       language = language,
+      themeMode = saved?.themeMode ?: ThemeMode.DARK,
+      colorTheme = saved?.colorTheme ?: ColorTheme.AMBER_RUIN,
     )
   }
 
@@ -375,7 +389,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     _uiState.update { it.copy(dictionaryTab = tab) }
   }
 
-  fun openMenu(tab: MenuTab = MenuTab.LOG) {
+  fun openMenu(tab: MenuTab = MenuTab.PROGRESS) {
     _uiState.update { it.copy(showMenu = true, menuTab = tab) }
   }
 
@@ -434,6 +448,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     persist()
   }
 
+  fun setThemeMode(themeMode: ThemeMode) {
+    _uiState.update { it.copy(themeMode = themeMode) }
+    persist()
+  }
+
+  fun setColorTheme(colorTheme: ColorTheme) {
+    _uiState.update { it.copy(colorTheme = colorTheme) }
+    persist()
+  }
+
   fun debugBulkApplyTranslations() {
     _uiState.update { current ->
       val updatedMap = current.dictionary.toMutableMap()
@@ -469,6 +493,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val keys = (1..19).map { LevelEngine.levelKey(1, it) }.toSet()
     _uiState.update { current ->
       current.copy(clearedLevelKeys = current.clearedLevelKeys + keys)
+    }
+    persist()
+  }
+
+  fun debugFill19ClearsForBoard2() {
+    val b1Keys = (1..25).map { LevelEngine.levelKey(1, it) }
+    val b2Keys = (1..19).map { LevelEngine.levelKey(2, it) }
+    _uiState.update { current ->
+      current.copy(clearedLevelKeys = current.clearedLevelKeys + b1Keys + b2Keys)
     }
     persist()
   }
@@ -543,6 +576,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         soundEnabled = state.soundEnabled,
         bgmEnabled = state.bgmEnabled,
         language = state.language,
+        themeMode = state.themeMode,
+        colorTheme = state.colorTheme,
         selectedBoardId = state.selectedBoardId,
       )
     )

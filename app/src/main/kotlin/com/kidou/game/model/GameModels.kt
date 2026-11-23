@@ -1,5 +1,8 @@
 package com.kidou.game.model
 
+import com.kidou.game.ui.theme.ColorTheme
+import com.kidou.game.ui.theme.ThemeMode
+
 data class GlyphGrid(
   val rows: List<String>,
 ) {
@@ -40,10 +43,18 @@ data class WordDef(
 }
 
 data class BoardCollectionDef(
+  val titleSubtitleJa: String = "言語解読 × 試行錯誤",
+  val titleSubtitleEn: String = "DECIPHER × EXPERIMENT",
   val guideLines: List<List<List<String>>> = emptyList(),
   val boards: List<BoardDef> = emptyList(),
 ) {
   fun boardById(id: Int): BoardDef = boards.firstOrNull { it.id == id } ?: boards.first()
+
+  fun titleSubtitle(language: AppLanguage): String =
+    when (language) {
+      AppLanguage.JA -> titleSubtitleJa
+      AppLanguage.EN -> titleSubtitleEn
+    }
 }
 
 data class BoardDef(
@@ -83,9 +94,25 @@ data class LevelInitialState(
   val lock: String = "locked",
   val dial: Int = 0,
   val valve: Int = 0,
+  val swA: Boolean = false,
+  val swB: Boolean = false,
+  val swC: Boolean = false,
+  val slider: String = "left",
   val lamp: String = "off",
   val primaryMessage: List<List<String>> = emptyList(),
   val secondaryMessage: List<List<String>> = emptyList(),
+)
+
+data class ModuleCheck(
+  val module: String = "",
+  val expected: String = "",
+)
+
+data class LogicClause(
+  val operator: String = "AND",
+  val checks: List<ModuleCheck> = emptyList(),
+  val hintPrimary: List<List<String>> = emptyList(),
+  val hintSecondary: List<List<String>> = emptyList(),
 )
 
 data class ConditionRequirement(
@@ -95,7 +122,14 @@ data class ConditionRequirement(
   val lockEq: String? = null,
   val dialEq: Int? = null,
   val valveEq: Int? = null,
+  val swAEq: Boolean? = null,
+  val swBEq: Boolean? = null,
+  val swCEq: Boolean? = null,
+  val sliderEq: String? = null,
+  val requireHold: Boolean? = null,
+  val dualPressesEq: Int? = null,
   val buttonPressesEq: Int? = null,
+  val logicClauses: List<LogicClause> = emptyList(),
 )
 
 data class SequenceStepDef(
@@ -104,13 +138,13 @@ data class SequenceStepDef(
   val hintPrimary: List<List<String>> = emptyList(),
 )
 
-enum class WordColorTag(val labelJa: String, val labelEn: String, val colorHex: Long) {
-  UNCLASSIFIED("未分類", "None", 0xFF8B969E),
-  HYPOTHESIS("仮説", "Guess", 0xFFF2B84B),
-  CONFIRMED("確信", "Sure", 0xFF5EEB8F),
-  OBJECT("対象", "Object", 0xFF58C4DD),
-  ACTION("操作", "Action", 0xFFB892FF),
-  MODIFIER("状態/数", "Mod/Num", 0xFFE87E6B);
+enum class WordColorTag(val labelJa: String, val labelEn: String) {
+  UNCLASSIFIED("未分類", "None"),
+  HYPOTHESIS("仮説", "Guess"),
+  CONFIRMED("確信", "Sure"),
+  OBJECT("対象", "Object"),
+  ACTION("操作", "Action"),
+  MODIFIER("状態/数", "Mod/Num");
 
   fun label(language: AppLanguage): String =
     when (language) {
@@ -184,7 +218,12 @@ data class LevelRuntimeState(
   val lock: String = "locked",
   val dial: Int = 0,
   val valve: Int = 0,
+  val swA: Boolean = false,
+  val swB: Boolean = false,
+  val swC: Boolean = false,
+  val slider: String = "left",
   val buttonPresses: Int = 0,
+  val dualPresses: Int = 0,
   val seqStep: Int = 0,
   val seqSubProgress: Int = 0,
   val isCleared: Boolean = false,
@@ -207,6 +246,8 @@ data class SaveDataV2(
   val soundEnabled: Boolean = true,
   val bgmEnabled: Boolean = true,
   val language: AppLanguage = AppLanguage.JA,
+  val themeMode: ThemeMode = ThemeMode.DARK,
+  val colorTheme: ColorTheme = ColorTheme.AMBER_RUIN,
   val selectedBoardId: Int = 1,
 )
 

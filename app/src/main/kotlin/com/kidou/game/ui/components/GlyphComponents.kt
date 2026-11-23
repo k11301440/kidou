@@ -37,14 +37,14 @@ import com.kidou.game.model.DictionaryEntry
 import com.kidou.game.model.GlyphGrid
 import com.kidou.game.model.WordColorTag
 import com.kidou.game.model.WordDef
-import com.kidou.game.ui.theme.KidouColors
+import com.kidou.game.ui.theme.KidouTheme
 import kotlin.math.floor
 
 @Composable
 fun PixelGlyph(
   grid: GlyphGrid?,
   size: Dp,
-  color: Color = KidouColors.Glyph,
+  color: Color = KidouTheme.palette.glyph,
   modifier: Modifier = Modifier,
 ) {
   Canvas(modifier = modifier.size(size)) {
@@ -79,17 +79,18 @@ fun GlyphWordTile(
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
   compact: Boolean = false,
-  glyphColor: Color = KidouColors.Glyph,
+  glyphColor: Color = KidouTheme.palette.glyph,
 ) {
+  val palette = KidouTheme.palette
   val translation = entry?.resolvedTranslation(wordDef, language)?.trim().orEmpty()
   val colorTag = entry?.colorTag ?: WordColorTag.UNCLASSIFIED
-  val tagColor = Color(colorTag.colorHex)
+  val tagColor = palette.tagColor(colorTag)
   val hasTag = colorTag != WordColorTag.UNCLASSIFIED
   val borderColor =
     when {
-      hasTag -> tagColor.copy(alpha = 0.72f)
-      translation.isNotEmpty() -> KidouColors.BorderBright
-      else -> KidouColors.Border
+      hasTag -> tagColor.copy(alpha = 0.78f)
+      translation.isNotEmpty() -> palette.borderBright
+      else -> palette.border
     }
 
   val glyphSize = if (compact) 22.dp else 30.dp
@@ -103,7 +104,7 @@ fun GlyphWordTile(
     modifier =
       modifier
         .widthIn(min = if (compact) 34.dp else 44.dp, max = 104.dp)
-        .background(KidouColors.Tile, RectangleShape)
+        .background(palette.tile, RectangleShape)
         .border(1.dp, borderColor, RectangleShape)
         .semantics { contentDescription = desc }
         .clickable(role = Role.Button, onClick = onClick)
@@ -116,7 +117,7 @@ fun GlyphWordTile(
       if (translation.isNotEmpty()) {
         Text(
           text = translation,
-          color = if (hasTag) tagColor else KidouColors.Glyph,
+          color = if (hasTag) tagColor else palette.glyph,
           fontFamily = FontFamily.Monospace,
           fontSize = if (compact) 9.sp else 10.sp,
           fontWeight = FontWeight.Medium,
@@ -127,7 +128,7 @@ fun GlyphWordTile(
       } else {
         Text(
           text = "··",
-          color = if (hasTag) tagColor.copy(alpha = 0.8f) else KidouColors.Muted.copy(alpha = 0.45f),
+          color = if (hasTag) tagColor.copy(alpha = 0.8f) else palette.muted.copy(alpha = 0.45f),
           fontFamily = FontFamily.Monospace,
           fontSize = 9.sp,
           textAlign = TextAlign.Center,
@@ -143,6 +144,46 @@ fun GlyphWordTile(
   }
 }
 
+/** Non-clickable glyph+ruby badge embedded inside interactive hardware buttons (§5). */
+@Composable
+fun EmbeddedGlyphWithRuby(
+  wordId: String,
+  grid: GlyphGrid?,
+  wordDef: WordDef?,
+  entry: DictionaryEntry?,
+  language: AppLanguage,
+  glyphColor: Color,
+  glyphSize: Dp = 20.dp,
+) {
+  val palette = KidouTheme.palette
+  val translation = entry?.resolvedTranslation(wordDef, language)?.trim().orEmpty()
+  val colorTag = entry?.colorTag ?: WordColorTag.UNCLASSIFIED
+  val tagColor = palette.tagColor(colorTag)
+  val hasTag = colorTag != WordColorTag.UNCLASSIFIED
+
+  Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.Center,
+  ) {
+    if (translation.isNotEmpty()) {
+      Text(
+        text = translation,
+        color = if (hasTag) tagColor else glyphColor,
+        fontFamily = FontFamily.Monospace,
+        fontSize = 9.sp,
+        fontWeight = FontWeight.Bold,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+      )
+    }
+    PixelGlyph(
+      grid = grid,
+      size = glyphSize,
+      color = glyphColor,
+    )
+  }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GlyphSentenceRow(
@@ -154,7 +195,7 @@ fun GlyphSentenceRow(
   onWordClick: (String) -> Unit,
   modifier: Modifier = Modifier,
   compact: Boolean = false,
-  glyphColor: Color = KidouColors.Glyph,
+  glyphColor: Color = KidouTheme.palette.glyph,
 ) {
   if (slots.isEmpty()) return
   val slotGap = if (compact) 11.dp else 16.dp

@@ -1,6 +1,5 @@
 package com.kidou.game
 
-import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -11,9 +10,11 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import com.kidou.game.ui.BoardScreen
 import com.kidou.game.ui.DictionarySheet
 import com.kidou.game.ui.GuideSheet
@@ -23,7 +24,8 @@ import com.kidou.game.ui.StorySheet
 import com.kidou.game.ui.TitleScreen
 import com.kidou.game.ui.WordEditorSheet
 import com.kidou.game.ui.theme.KIDOUTheme
-import com.kidou.game.ui.theme.KidouColors
+import com.kidou.game.ui.theme.KidouTheme
+import com.kidou.game.ui.theme.ThemeMode
 import com.kidou.game.viewmodel.DictionaryTab
 import com.kidou.game.viewmodel.GameViewModel
 import com.kidou.game.viewmodel.ScreenRoute
@@ -40,10 +42,21 @@ class MainActivity : ComponentActivity() {
     )
 
     setContent {
-      KIDOUTheme {
+      val uiState by gameViewModel.uiState.collectAsState()
+      KIDOUTheme(
+        themeMode = uiState.themeMode,
+        colorTheme = uiState.colorTheme,
+      ) {
+        val bgArgb = KidouTheme.palette.background.toArgb()
+        LaunchedEffect(uiState.themeMode, bgArgb) {
+          val barStyle =
+            if (uiState.themeMode == ThemeMode.DARK) SystemBarStyle.dark(bgArgb)
+            else SystemBarStyle.light(bgArgb, bgArgb)
+          enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
+        }
         Surface(
           modifier = Modifier.fillMaxSize(),
-          color = KidouColors.Background,
+          color = KidouTheme.palette.background,
         ) {
           KidouAppRoot(activity = this, viewModel = gameViewModel)
         }
@@ -64,7 +77,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun KidouAppRoot(
-  activity: Activity,
+  activity: ComponentActivity,
   viewModel: GameViewModel,
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -79,6 +92,7 @@ private fun KidouAppRoot(
       TitleScreen(
         glyphs = data.glyphs,
         wordOrder = data.wordOrder,
+        subtitle = data.boardCollection.titleSubtitle(uiState.language),
         language = uiState.language,
         bgmEnabled = uiState.bgmEnabled,
         onStart = { viewModel.enterGameFromTitle() },
@@ -142,13 +156,15 @@ private fun KidouAppRoot(
     MenuSheet(
       uiState = uiState,
       onSelectTab = { viewModel.setMenuTab(it) },
-      onEditWord = { viewModel.openWordEditor(it) },
       onToggleBgm = { viewModel.setBgmEnabled(it) },
       onToggleSound = { viewModel.setSoundEnabled(it) },
       onSelectLanguage = { viewModel.setLanguage(it) },
+      onSelectThemeMode = { viewModel.setThemeMode(it) },
+      onSelectColorTheme = { viewModel.setColorTheme(it) },
       onDebugBulkApply = { viewModel.debugBulkApplyTranslations() },
       onDebugResetTranslations = { viewModel.debugResetTranslations() },
-      onDebugFill19Clears = { viewModel.debugFill19ClearsForBoard1() },
+      onDebugFill19ClearsBoard1 = { viewModel.debugFill19ClearsForBoard1() },
+      onDebugFill19ClearsBoard2 = { viewModel.debugFill19ClearsForBoard2() },
       onResetAll = { viewModel.resetAll() },
       onDismiss = { viewModel.closeMenu() },
     )

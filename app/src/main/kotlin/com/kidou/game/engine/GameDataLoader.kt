@@ -4,13 +4,10 @@ import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.kidou.game.model.BoardCollectionDef
-import com.kidou.game.model.BoardDef
 import com.kidou.game.model.GlyphGrid
-import com.kidou.game.model.LevelDef
 import com.kidou.game.model.LevelInitialState
 import com.kidou.game.model.LoadedGameData
 import com.kidou.game.model.PuzzleType
-import com.kidou.game.model.SequenceStepDef
 import com.kidou.game.model.WordDef
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -71,6 +68,8 @@ object GameDataLoader {
   @Suppress("USELESS_ELVIS")
   private fun normalizeBoards(raw: BoardCollectionDef): BoardCollectionDef {
     return raw.copy(
+      titleSubtitleJa = raw.titleSubtitleJa ?: "言語解読 × 試行錯誤",
+      titleSubtitleEn = raw.titleSubtitleEn ?: "DECIPHER × EXPERIMENT",
       guideLines = raw.guideLines ?: emptyList(),
       boards =
         (raw.boards ?: emptyList()).map { b ->
@@ -80,6 +79,7 @@ object GameDataLoader {
             levels =
               (b.levels ?: emptyList()).map { l ->
                 val init = l.initialState ?: LevelInitialState()
+                val req = l.requirements
                 l.copy(
                   puzzleType = l.puzzleType ?: PuzzleType.CONDITION,
                   unlockedControls = l.unlockedControls ?: emptyList(),
@@ -90,9 +90,22 @@ object GameDataLoader {
                       key = init.key ?: "out",
                       conduit = init.conduit ?: "cut",
                       lock = init.lock ?: "locked",
+                      slider = init.slider ?: "left",
                       lamp = init.lamp ?: "off",
                       primaryMessage = init.primaryMessage ?: emptyList(),
                       secondaryMessage = init.secondaryMessage ?: emptyList(),
+                    ),
+                  requirements =
+                    req?.copy(
+                      logicClauses =
+                        (req.logicClauses ?: emptyList()).map { clause ->
+                          clause.copy(
+                            operator = clause.operator ?: "AND",
+                            checks = clause.checks ?: emptyList(),
+                            hintPrimary = clause.hintPrimary ?: emptyList(),
+                            hintSecondary = clause.hintSecondary ?: emptyList(),
+                          )
+                        },
                     ),
                   sequenceSteps =
                     (l.sequenceSteps ?: emptyList()).map { s ->

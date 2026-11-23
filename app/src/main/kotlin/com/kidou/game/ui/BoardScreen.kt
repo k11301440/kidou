@@ -21,26 +21,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kidou.game.engine.Base5
 import com.kidou.game.engine.LevelEngine
-import com.kidou.game.model.BoardDef
+import com.kidou.game.model.GlyphGrid
 import com.kidou.game.ui.components.GlyphSentenceRow
 import com.kidou.game.ui.components.PixelActionButton
 import com.kidou.game.ui.components.PixelGlyph
 import com.kidou.game.ui.components.PixelLed
 import com.kidou.game.ui.components.PixelStonePanel
 import com.kidou.game.ui.i18n.stringsFor
-import com.kidou.game.ui.theme.KidouColors
-import com.kidou.game.viewmodel.DictionaryTab
+import com.kidou.game.ui.theme.KidouTheme
 import com.kidou.game.viewmodel.GameUiState
 
 @Composable
@@ -55,6 +52,7 @@ fun BoardScreen(
   onOpenMenu: () -> Unit,
 ) {
   val data = uiState.gameData ?: return
+  val palette = KidouTheme.palette
   val strings = stringsFor(uiState.language)
   val currentBoard = data.boardCollection.boardById(uiState.selectedBoardId)
 
@@ -62,7 +60,7 @@ fun BoardScreen(
     modifier =
       Modifier
         .fillMaxSize()
-        .background(KidouColors.Background)
+        .background(palette.background)
         .safeDrawingPadding()
         .padding(horizontal = 12.dp, vertical = 8.dp),
     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -75,31 +73,31 @@ fun BoardScreen(
     ) {
       PixelActionButton(
         label = strings.dictionary,
-        accent = KidouColors.Amber,
+        accent = palette.accentPrimary,
         onClick = onOpenDictionary,
         modifier = Modifier.weight(1f),
       )
       PixelActionButton(
         label = strings.story,
-        accent = KidouColors.Cyan,
+        accent = palette.accentSecondary,
         onClick = onOpenStory,
         modifier = Modifier.weight(1f),
       )
       PixelActionButton(
         label = strings.guide,
-        accent = KidouColors.Green,
+        accent = palette.statusSuccess,
         onClick = onOpenGuide,
         modifier = Modifier.weight(1f),
       )
       PixelActionButton(
         label = strings.menu,
-        accent = KidouColors.Muted,
+        accent = palette.muted,
         onClick = onOpenMenu,
         modifier = Modifier.weight(1f),
       )
     }
 
-    // Board Selector Bar (Board 1 / Board 2 unlocked at 20/25)
+    // Board Selector Bar (Board 1 / Board 2 / Board 3)
     Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -109,15 +107,15 @@ fun BoardScreen(
         val selected = board.id == uiState.selectedBoardId
         val borderColor =
           when {
-            selected -> KidouColors.Amber
-            unlocked -> KidouColors.BorderBright
-            else -> KidouColors.Border.copy(alpha = 0.5f)
+            selected -> palette.accentPrimary
+            unlocked -> palette.borderBright
+            else -> palette.border.copy(alpha = 0.5f)
           }
         val bgColor =
           when {
-            selected -> KidouColors.Amber.copy(alpha = 0.16f)
-            unlocked -> KidouColors.Panel
-            else -> KidouColors.Background
+            selected -> palette.accentPrimary.copy(alpha = 0.16f)
+            unlocked -> palette.panel
+            else -> palette.background
           }
         Row(
           verticalAlignment = Alignment.CenterVertically,
@@ -129,30 +127,30 @@ fun BoardScreen(
               .border(2.dp, borderColor, RectangleShape)
               .semantics { contentDescription = "board_tab_${board.id}" }
               .then(if (unlocked) Modifier.clickable { onSelectBoard(board.id) } else Modifier)
-              .padding(vertical = 8.dp, horizontal = 8.dp),
+              .padding(vertical = 8.dp, horizontal = 6.dp),
         ) {
           PixelGlyph(
             grid = data.glyphs["n_board"],
-            size = 16.dp,
-            color = if (unlocked) KidouColors.Glyph else KidouColors.Muted.copy(alpha = 0.4f),
+            size = 15.dp,
+            color = if (unlocked) palette.glyph else palette.muted.copy(alpha = 0.4f),
           )
-          Spacer(modifier = Modifier.size(6.dp))
+          Spacer(modifier = Modifier.size(5.dp))
           Base5.toDigitWordIds(board.id).forEach { dId ->
             PixelGlyph(
               grid = data.glyphs[dId],
-              size = 16.dp,
+              size = 15.dp,
               color =
-                if (selected) KidouColors.Amber
-                else if (unlocked) KidouColors.Glyph
-                else KidouColors.Muted.copy(alpha = 0.4f),
+                if (selected) palette.accentPrimary
+                else if (unlocked) palette.glyph
+                else palette.muted.copy(alpha = 0.4f),
             )
           }
           if (!unlocked) {
-            Spacer(modifier = Modifier.size(6.dp))
+            Spacer(modifier = Modifier.size(5.dp))
             PixelGlyph(
               grid = data.glyphs["n_lock"],
-              size = 14.dp,
-              color = KidouColors.Muted.copy(alpha = 0.45f),
+              size = 13.dp,
+              color = palette.muted.copy(alpha = 0.45f),
             )
           }
         }
@@ -183,20 +181,18 @@ fun BoardScreen(
           )
           Text(
             text = strings.boardTitle,
-            color = KidouColors.Muted,
+            color = palette.muted,
             fontFamily = FontFamily.Monospace,
             fontSize = 11.sp,
           )
         }
 
-        // 25-pip visual activation bar (with pip #20 amber threshold marker, zero Arabic numbers!)
         BoardProgressPipBar(
           clearedCount = LevelEngine.countBoardClears(currentBoard.id, uiState.clearedLevelKeys),
           totalSlots = currentBoard.totalSlots,
           threshold = 20,
         )
 
-        // 5x5 Grid of Base-5 Level Tiles
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
           for (row in 0 until 5) {
             Row(
@@ -226,17 +222,19 @@ fun BoardScreen(
           }
         }
 
-        if (currentBoard.id == 2) {
+        val nextBoard =
+          data.boardCollection.boards.firstOrNull { it.requiredBoardId == currentBoard.id }
+        if (currentBoard.levels.size < currentBoard.totalSlots) {
           Text(
             text = strings.levelLockedWip,
-            color = KidouColors.Muted,
+            color = palette.muted,
             fontFamily = FontFamily.Monospace,
             fontSize = 11.sp,
           )
-        } else if (!uiState.isBoard2Unlocked) {
+        } else if (nextBoard != null && !LevelEngine.isBoardUnlocked(nextBoard, uiState.clearedLevelKeys)) {
           Text(
-            text = strings.boardLockedHint,
-            color = KidouColors.Muted,
+            text = strings.boardLockedHint(currentBoard.id),
+            color = palette.muted,
             fontFamily = FontFamily.Monospace,
             fontSize = 11.sp,
           )
@@ -252,12 +250,13 @@ private fun BoardProgressPipBar(
   totalSlots: Int,
   threshold: Int,
 ) {
+  val palette = KidouTheme.palette
   Row(
     modifier =
       Modifier
         .fillMaxWidth()
-        .background(KidouColors.PanelSunken, RectangleShape)
-        .border(1.dp, KidouColors.Border, RectangleShape)
+        .background(palette.panelSunken, RectangleShape)
+        .border(1.dp, palette.border, RectangleShape)
         .padding(horizontal = 6.dp, vertical = 5.dp),
     horizontalArrangement = Arrangement.spacedBy(2.dp),
     verticalAlignment = Alignment.CenterVertically,
@@ -267,9 +266,9 @@ private fun BoardProgressPipBar(
       val isThreshold = i == threshold
       val color =
         when {
-          filled -> KidouColors.Green
-          isThreshold -> KidouColors.Amber.copy(alpha = 0.55f)
-          else -> KidouColors.LampOff
+          filled -> palette.statusSuccess
+          isThreshold -> palette.accentPrimary.copy(alpha = 0.6f)
+          else -> palette.lampOff
         }
       Box(
         modifier =
@@ -288,28 +287,29 @@ private fun BoardLevelCell(
   levelNumber: Int,
   available: Boolean,
   isCleared: Boolean,
-  glyphs: Map<String, com.kidou.game.model.GlyphGrid>,
+  glyphs: Map<String, GlyphGrid>,
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val palette = KidouTheme.palette
   val digits = Base5.toDigitWordIds(levelNumber)
   val borderColor =
     when {
-      !available -> KidouColors.Border.copy(alpha = 0.35f)
-      isCleared -> KidouColors.Green
-      else -> KidouColors.BorderBright
+      !available -> palette.border.copy(alpha = 0.35f)
+      isCleared -> palette.statusSuccess
+      else -> palette.borderBright
     }
   val bgColor =
     when {
-      !available -> KidouColors.Background
-      isCleared -> KidouColors.Green.copy(alpha = 0.14f)
-      else -> KidouColors.Tile
+      !available -> palette.background
+      isCleared -> palette.statusSuccess.copy(alpha = 0.14f)
+      else -> palette.tile
     }
   val glyphColor =
     when {
-      !available -> KidouColors.Muted.copy(alpha = 0.25f)
-      isCleared -> KidouColors.Green
-      else -> KidouColors.Glyph
+      !available -> palette.muted.copy(alpha = 0.25f)
+      isCleared -> palette.statusSuccess
+      else -> palette.glyph
     }
   val glyphSize =
     when (digits.size) {
@@ -324,30 +324,42 @@ private fun BoardLevelCell(
         .aspectRatio(1f)
         .background(bgColor, RectangleShape)
         .border(if (isCleared) 2.dp else 1.5.dp, borderColor, RectangleShape)
-        .semantics { contentDescription = "board_${boardId}_level_$levelNumber" }
+        .semantics {
+          contentDescription =
+            if (isCleared) "board_${boardId}_level_${levelNumber}_cleared"
+            else "board_${boardId}_level_$levelNumber"
+        }
         .then(if (available) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
         .padding(4.dp),
   ) {
-    // Top-right status LED pip
     PixelLed(
       color =
         when {
-          !available -> KidouColors.Background
-          isCleared -> KidouColors.Green
-          else -> KidouColors.Amber.copy(alpha = 0.4f)
+          !available -> palette.background
+          isCleared -> palette.statusSuccess
+          else -> palette.accentPrimary.copy(alpha = 0.45f)
         },
       size = 7.dp,
       modifier = Modifier.align(Alignment.TopEnd),
     )
 
-    // Base-5 numeric glyph display ONLY (zero Arabic/Japanese numerals!)
-    Row(
-      modifier = Modifier.align(Alignment.Center),
-      horizontalArrangement = Arrangement.spacedBy(2.dp),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      digits.forEach { dId ->
-        PixelGlyph(grid = glyphs[dId], size = glyphSize, color = glyphColor)
+    // §6: Replace number glyph with cleared glyph (adj_complete) once cleared
+    if (isCleared) {
+      PixelGlyph(
+        grid = glyphs["adj_complete"],
+        size = 24.dp,
+        color = palette.statusSuccess,
+        modifier = Modifier.align(Alignment.Center),
+      )
+    } else {
+      Row(
+        modifier = Modifier.align(Alignment.Center),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        digits.forEach { dId ->
+          PixelGlyph(grid = glyphs[dId], size = glyphSize, color = glyphColor)
+        }
       }
     }
   }

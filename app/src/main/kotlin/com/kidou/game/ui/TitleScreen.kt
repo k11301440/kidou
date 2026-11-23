@@ -27,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -42,39 +41,42 @@ import com.kidou.game.ui.components.PixelBevelPad
 import com.kidou.game.ui.components.PixelGlyph
 import com.kidou.game.ui.components.PixelStonePanel
 import com.kidou.game.ui.i18n.stringsFor
-import com.kidou.game.ui.theme.KidouColors
+import com.kidou.game.ui.theme.KidouPalette
+import com.kidou.game.ui.theme.KidouTheme
 import kotlin.math.floor
 
 @Composable
 fun TitleScreen(
   glyphs: Map<String, GlyphGrid>,
   wordOrder: List<String>,
+  subtitle: String,
   language: AppLanguage,
   bgmEnabled: Boolean,
   onStart: () -> Unit,
   onToggleLanguage: (AppLanguage) -> Unit,
   onToggleBgm: (Boolean) -> Unit,
 ) {
+  val palette = KidouTheme.palette
   val strings = stringsFor(language)
 
   Box(
     modifier =
       Modifier
         .fillMaxSize()
-        .background(KidouColors.Background),
+        .background(palette.background),
   ) {
     ScrollingGlyphBackdrop(
       glyphs = glyphs,
       wordOrder = wordOrder,
+      palette = palette,
       modifier = Modifier.fillMaxSize(),
     )
 
-    // Subtle dark center vignette for legibility
     Box(
       modifier =
         Modifier
           .fillMaxSize()
-          .background(KidouColors.Background.copy(alpha = 0.42f)),
+          .background(palette.background.copy(alpha = if (palette.isDark) 0.42f else 0.55f)),
     )
 
     Column(
@@ -93,25 +95,27 @@ fun TitleScreen(
       ) {
         PixelActionButton(
           label = if (language == AppLanguage.JA) "日本語 / EN" else "EN / 日本語",
-          accent = KidouColors.Cyan,
+          accent = palette.accentSecondary,
           onClick = {
             onToggleLanguage(if (language == AppLanguage.JA) AppLanguage.EN else AppLanguage.JA)
           },
         )
         PixelActionButton(
           label = if (bgmEnabled) "BGM ON" else "BGM OFF",
-          accent = if (bgmEnabled) KidouColors.Amber else KidouColors.Muted,
+          accent = if (bgmEnabled) palette.accentPrimary else palette.muted,
           onClick = { onToggleBgm(!bgmEnabled) },
         )
       }
 
+      // Uniform 20.dp padding on all 4 sides so left/right/bottom margins around Start match identically (§2)
       PixelStonePanel(
-        borderColor = KidouColors.Amber.copy(alpha = 0.85f),
-        containerColor = KidouColors.Panel.copy(alpha = 0.94f),
+        borderColor = palette.accentPrimary.copy(alpha = 0.88f),
+        containerColor = palette.panel.copy(alpha = 0.95f),
+        contentPadding = 20.dp,
         modifier = Modifier.fillMaxWidth(),
       ) {
         Column(
-          modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+          modifier = Modifier.fillMaxWidth(),
           horizontalAlignment = Alignment.CenterHorizontally,
           verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -119,14 +123,14 @@ fun TitleScreen(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
           ) {
-            PixelGlyph(grid = glyphs["n_machine"], size = 28.dp, color = KidouColors.Glyph)
-            PixelGlyph(grid = glyphs["v_activate"], size = 28.dp, color = KidouColors.Amber)
-            PixelGlyph(grid = glyphs["n_core"], size = 28.dp, color = KidouColors.Green)
+            PixelGlyph(grid = glyphs["n_machine"], size = 28.dp, color = palette.glyph)
+            PixelGlyph(grid = glyphs["v_activate"], size = 28.dp, color = palette.accentPrimary)
+            PixelGlyph(grid = glyphs["n_core"], size = 28.dp, color = palette.statusSuccess)
           }
 
           Text(
             text = "KIDOU",
-            color = KidouColors.Glyph,
+            color = palette.glyph,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
             fontSize = 36.sp,
@@ -134,8 +138,8 @@ fun TitleScreen(
           )
 
           Text(
-            text = strings.titleSubtitle,
-            color = KidouColors.Amber,
+            text = subtitle,
+            color = palette.accentPrimary,
             fontFamily = FontFamily.Monospace,
             fontSize = 12.sp,
             letterSpacing = 1.5.sp,
@@ -144,8 +148,8 @@ fun TitleScreen(
           Spacer(modifier = Modifier.height(6.dp))
 
           PixelBevelPad(
-            borderColor = KidouColors.Amber,
-            fillColor = KidouColors.Amber.copy(alpha = 0.22f),
+            borderColor = palette.accentPrimary,
+            fillColor = palette.accentPrimary.copy(alpha = 0.22f),
             onClick = onStart,
             modifier =
               Modifier
@@ -155,7 +159,7 @@ fun TitleScreen(
           ) {
             Text(
               text = strings.startGame,
-              color = KidouColors.Amber,
+              color = palette.accentPrimary,
               fontFamily = FontFamily.Monospace,
               fontWeight = FontWeight.Bold,
               fontSize = 16.sp,
@@ -168,13 +172,13 @@ fun TitleScreen(
       Box(
         modifier =
           Modifier
-            .background(KidouColors.Panel.copy(alpha = 0.85f), RectangleShape)
-            .border(1.dp, KidouColors.Border, RectangleShape)
+            .background(palette.panel.copy(alpha = 0.88f), RectangleShape)
+            .border(1.dp, palette.border, RectangleShape)
             .padding(horizontal = 10.dp, vertical = 4.dp),
       ) {
         Text(
-          text = "v0.2.0 PROTOTYPE",
-          color = KidouColors.Muted,
+          text = "v0.3.0 PROTOTYPE",
+          color = palette.muted,
           fontFamily = FontFamily.Monospace,
           fontSize = 10.sp,
         )
@@ -187,12 +191,14 @@ fun TitleScreen(
 private fun ScrollingGlyphBackdrop(
   glyphs: Map<String, GlyphGrid>,
   wordOrder: List<String>,
+  palette: KidouPalette,
   modifier: Modifier = Modifier,
 ) {
-  val glyphList = remember(glyphs, wordOrder) {
-    val ordered = wordOrder.mapNotNull { glyphs[it] }
-    if (ordered.isNotEmpty()) ordered else glyphs.values.toList()
-  }
+  val glyphList =
+    remember(glyphs, wordOrder) {
+      val ordered = wordOrder.mapNotNull { glyphs[it] }
+      if (ordered.isNotEmpty()) ordered else glyphs.values.toList()
+    }
   val infinite = rememberInfiniteTransition(label = "title_glyph_scroll")
   val scrollProgress by
     infinite.animateFloat(
@@ -226,9 +232,9 @@ private fun ScrollingGlyphBackdrop(
       val visibleCols = (size.width / stepX).toInt() + 4
       val baseColor =
         when (rowIdx % 4) {
-          0 -> KidouColors.Amber.copy(alpha = 0.22f)
-          2 -> KidouColors.Cyan.copy(alpha = 0.16f)
-          else -> KidouColors.Glyph.copy(alpha = 0.16f)
+          0 -> palette.accentPrimary.copy(alpha = 0.22f)
+          2 -> palette.accentSecondary.copy(alpha = 0.17f)
+          else -> palette.glyph.copy(alpha = 0.16f)
         }
 
       for (colOffset in 0 until visibleCols) {
@@ -239,9 +245,8 @@ private fun ScrollingGlyphBackdrop(
         val idx = (((c + rowIdx * 7) % glyphList.size) + glyphList.size) % glyphList.size
         val grid = glyphList[idx]
 
-        // Subtle stone tile outline behind each drifting glyph
         drawRect(
-          color = KidouColors.Border.copy(alpha = 0.16f),
+          color = palette.border.copy(alpha = 0.18f),
           topLeft = Offset(x, y),
           size = Size(tileDp, tileDp),
         )

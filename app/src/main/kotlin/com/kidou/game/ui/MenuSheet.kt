@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -13,8 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,50 +38,56 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidou.game.config.AppConfig
 import com.kidou.game.model.AppLanguage
 import com.kidou.game.model.LampState
-import com.kidou.game.ui.components.GlyphSentenceRow
 import com.kidou.game.ui.components.PixelDivider
 import com.kidou.game.ui.i18n.stringsFor
-import com.kidou.game.ui.theme.KidouColors
+import com.kidou.game.ui.theme.ColorTheme
+import com.kidou.game.ui.theme.KidouPalette
+import com.kidou.game.ui.theme.KidouTheme
+import com.kidou.game.ui.theme.ThemeMode
 import com.kidou.game.viewmodel.GameUiState
 import com.kidou.game.viewmodel.MenuTab
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun MenuSheet(
   uiState: GameUiState,
   onSelectTab: (MenuTab) -> Unit,
-  onEditWord: (String) -> Unit,
   onToggleBgm: (Boolean) -> Unit,
   onToggleSound: (Boolean) -> Unit,
   onSelectLanguage: (AppLanguage) -> Unit,
+  onSelectThemeMode: (ThemeMode) -> Unit,
+  onSelectColorTheme: (ColorTheme) -> Unit,
   onDebugBulkApply: () -> Unit,
   onDebugResetTranslations: () -> Unit,
-  onDebugFill19Clears: () -> Unit,
+  onDebugFill19ClearsBoard1: () -> Unit,
+  onDebugFill19ClearsBoard2: () -> Unit,
   onResetAll: () -> Unit,
   onDismiss: () -> Unit,
 ) {
   val data = uiState.gameData ?: return
+  val palette = KidouTheme.palette
   val strings = stringsFor(uiState.language)
   val stats = uiState.translationStats
+  val uriHandler = LocalUriHandler.current
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var showResetConfirm by remember { mutableStateOf(false) }
 
   ModalBottomSheet(
     onDismissRequest = onDismiss,
     sheetState = sheetState,
-    containerColor = KidouColors.Panel,
-    contentColor = KidouColors.Glyph,
+    containerColor = palette.panel,
+    contentColor = palette.glyph,
     shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp),
   ) {
     Column(
@@ -97,19 +103,14 @@ fun MenuSheet(
         fontFamily = FontFamily.Monospace,
         fontWeight = FontWeight.Bold,
         fontSize = 18.sp,
-        color = KidouColors.Glyph,
+        color = palette.glyph,
       )
 
+      // §3: Strictly Progress & Settings (Operation Log removed)
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        MenuTabButton(
-          label = strings.menuLogTab,
-          selected = uiState.menuTab == MenuTab.LOG,
-          onClick = { onSelectTab(MenuTab.LOG) },
-          modifier = Modifier.weight(1f),
-        )
         MenuTabButton(
           label = strings.menuProgressTab,
           selected = uiState.menuTab == MenuTab.PROGRESS,
@@ -125,111 +126,20 @@ fun MenuSheet(
       }
 
       when (uiState.menuTab) {
-        MenuTab.LOG -> {
-          if (uiState.operationLog.isEmpty()) {
-            Box(
-              modifier = Modifier.fillMaxWidth().weight(1f),
-              contentAlignment = Alignment.Center,
-            ) {
-              Text(
-                text = strings.noLogsYet,
-                color = KidouColors.Muted,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 13.sp,
-              )
-            }
-          } else {
-            val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
-            LazyColumn(
-              modifier = Modifier.fillMaxWidth().weight(1f),
-              verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-              items(uiState.operationLog, key = { it.id }) { entry ->
-                val lampColor = lampColorOf(entry.lamp)
-                Column(
-                  modifier =
-                    Modifier
-                      .fillMaxWidth()
-                      .background(KidouColors.PanelSunken, RectangleShape)
-                      .border(1.dp, KidouColors.Border, RectangleShape)
-                      .padding(10.dp),
-                  verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                  Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                  ) {
-                    Row(
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                      Box(modifier = Modifier.size(8.dp).background(lampColor))
-                      Text(
-                        text = "B${entry.boardId}-${entry.levelNumber}",
-                        color = KidouColors.Muted,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
-                      )
-                    }
-                    Text(
-                      text = timeFormat.format(Date(entry.timestampMs)),
-                      color = KidouColors.Muted,
-                      fontFamily = FontFamily.Monospace,
-                      fontSize = 11.sp,
-                    )
-                  }
-
-                  if (entry.actionLabelSlots.isNotEmpty()) {
-                    GlyphSentenceRow(
-                      slots = entry.actionLabelSlots,
-                      glyphs = data.glyphs,
-                      words = data.words,
-                      dictionary = uiState.dictionary,
-                      language = uiState.language,
-                      onWordClick = onEditWord,
-                      compact = true,
-                    )
-                  }
-                  if (entry.resultPrimarySlots.isNotEmpty()) {
-                    GlyphSentenceRow(
-                      slots = entry.resultPrimarySlots,
-                      glyphs = data.glyphs,
-                      words = data.words,
-                      dictionary = uiState.dictionary,
-                      language = uiState.language,
-                      onWordClick = onEditWord,
-                      compact = true,
-                      glyphColor =
-                        if (entry.lamp == LampState.RED) KidouColors.Red else KidouColors.Glyph,
-                    )
-                  }
-                  if (entry.resultSecondarySlots.isNotEmpty()) {
-                    GlyphSentenceRow(
-                      slots = entry.resultSecondarySlots,
-                      glyphs = data.glyphs,
-                      words = data.words,
-                      dictionary = uiState.dictionary,
-                      language = uiState.language,
-                      onWordClick = onEditWord,
-                      compact = true,
-                    )
-                  }
-                }
-              }
-            }
-          }
-        }
-
         MenuTab.PROGRESS -> {
           Column(
             modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
           ) {
-            StatRow(strings.clearedLevelsLabel, "${uiState.board1Clears} / 25")
+            StatRow(strings.board1ClearsLabel, "${uiState.board1Clears} / 25")
             StatRow(
               strings.board2StatusLabel,
               if (uiState.isBoard2Unlocked) strings.unlocked else strings.locked,
+            )
+            StatRow(strings.board2ClearsLabel, "${uiState.board2Clears} / 25")
+            StatRow(
+              strings.board3StatusLabel,
+              if (uiState.isBoard3Unlocked) strings.unlocked else strings.locked,
             )
             StatRow(
               strings.discoveredWordsLabel,
@@ -240,22 +150,6 @@ fun MenuSheet(
               "${stats.translatedCount} / ${stats.totalCount}",
             )
             StatRow(strings.translationRateLabel, "${stats.percent}%")
-            Box(
-              modifier =
-                Modifier
-                  .fillMaxWidth()
-                  .background(KidouColors.PanelSunken, RectangleShape)
-                  .border(1.dp, KidouColors.Border, RectangleShape)
-                  .padding(12.dp),
-            ) {
-              Text(
-                text = strings.progressNote,
-                color = KidouColors.Muted,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp,
-                lineHeight = 18.sp,
-              )
-            }
           }
         }
 
@@ -264,7 +158,6 @@ fun MenuSheet(
             modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
           ) {
-            // BGM Switch
             ToggleSettingRow(
               label = strings.bgmLabel,
               checked = uiState.bgmEnabled,
@@ -272,7 +165,6 @@ fun MenuSheet(
               contentDesc = "switch_bgm",
             )
 
-            // SFX Switch
             ToggleSettingRow(
               label = strings.sfxLabel,
               checked = uiState.soundEnabled,
@@ -280,20 +172,20 @@ fun MenuSheet(
               contentDesc = "switch_sfx",
             )
 
-            // Language Switch (JA / EN)
+            // Language Switch
             Column(
               modifier =
                 Modifier
                   .fillMaxWidth()
-                  .background(KidouColors.Tile, RectangleShape)
-                  .border(1.dp, KidouColors.Border, RectangleShape)
+                  .background(palette.tile, RectangleShape)
+                  .border(1.dp, palette.border, RectangleShape)
                   .padding(horizontal = 14.dp, vertical = 10.dp),
               verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
               Text(
                 text = strings.languageLabel,
                 fontFamily = FontFamily.Monospace,
-                color = KidouColors.Glyph,
+                color = palette.glyph,
                 fontSize = 13.sp,
               )
               Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -312,26 +204,145 @@ fun MenuSheet(
               }
             }
 
+            // §8: Theme Mode (Dark / Light) + Color Theme Selector
+            Column(
+              modifier =
+                Modifier
+                  .fillMaxWidth()
+                  .background(palette.tile, RectangleShape)
+                  .border(1.dp, palette.border, RectangleShape)
+                  .padding(horizontal = 14.dp, vertical = 10.dp),
+              verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+              Text(
+                text = strings.themeModeLabel,
+                fontFamily = FontFamily.Monospace,
+                color = palette.glyph,
+                fontSize = 13.sp,
+              )
+              Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MenuTabButton(
+                  label = strings.darkMode,
+                  selected = uiState.themeMode == ThemeMode.DARK,
+                  onClick = { onSelectThemeMode(ThemeMode.DARK) },
+                  modifier = Modifier.weight(1f).semantics { contentDescription = "theme_dark" },
+                )
+                MenuTabButton(
+                  label = strings.lightMode,
+                  selected = uiState.themeMode == ThemeMode.LIGHT,
+                  onClick = { onSelectThemeMode(ThemeMode.LIGHT) },
+                  modifier = Modifier.weight(1f).semantics { contentDescription = "theme_light" },
+                )
+              }
+
+              Text(
+                text = strings.colorThemeLabel,
+                fontFamily = FontFamily.Monospace,
+                color = palette.glyph,
+                fontSize = 13.sp,
+              )
+              FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+              ) {
+                ColorTheme.entries.forEach { ct ->
+                  val selected = uiState.colorTheme == ct
+                  val swatchColor = Color(ct.swatchHex)
+                  Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier =
+                      Modifier
+                        .background(
+                          if (selected) palette.accentPrimary.copy(alpha = 0.16f) else palette.panelSunken,
+                          RectangleShape,
+                        )
+                        .border(
+                          if (selected) 1.5.dp else 1.dp,
+                          if (selected) palette.accentPrimary else palette.border,
+                          RectangleShape,
+                        )
+                        .semantics { contentDescription = "color_theme_${ct.name.lowercase()}" }
+                        .clickable { onSelectColorTheme(ct) }
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                  ) {
+                    Box(modifier = Modifier.size(10.dp).background(swatchColor))
+                    Text(
+                      text = ct.label(uiState.language),
+                      color = if (selected) palette.accentPrimary else palette.glyph,
+                      fontFamily = FontFamily.Monospace,
+                      fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                      fontSize = 11.sp,
+                    )
+                  }
+                }
+              }
+            }
+
+            // §3: Privacy Policy Link (single constant URL in AppConfig)
+            Row(
+              modifier =
+                Modifier
+                  .fillMaxWidth()
+                  .background(palette.tile, RectangleShape)
+                  .border(1.dp, palette.border, RectangleShape)
+                  .semantics { contentDescription = "privacy_policy_link" }
+                  .clickable { runCatching { uriHandler.openUri(AppConfig.PRIVACY_POLICY_URL) } }
+                  .padding(horizontal = 14.dp, vertical = 12.dp),
+              horizontalArrangement = Arrangement.spacedBy(12.dp),
+              verticalAlignment = Alignment.CenterVertically,
+            ) {
+              Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+              ) {
+                Text(
+                  text = strings.privacyPolicyLabel,
+                  fontFamily = FontFamily.Monospace,
+                  color = palette.glyph,
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 13.sp,
+                )
+                Text(
+                  text = AppConfig.PRIVACY_POLICY_URL,
+                  fontFamily = FontFamily.Monospace,
+                  color = palette.muted,
+                  fontSize = 10.sp,
+                  maxLines = 1,
+                  overflow = TextOverflow.Ellipsis,
+                )
+              }
+              Text(
+                text = strings.privacyPolicyHint,
+                fontFamily = FontFamily.Monospace,
+                color = palette.accentSecondary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                maxLines = 1,
+                softWrap = false,
+              )
+            }
+
             // Credits (CC BY 4.0 required attribution)
             Column(
               modifier =
                 Modifier
                   .fillMaxWidth()
-                  .background(KidouColors.PanelSunken, RectangleShape)
-                  .border(1.dp, KidouColors.Border, RectangleShape)
+                  .background(palette.panelSunken, RectangleShape)
+                  .border(1.dp, palette.border, RectangleShape)
                   .padding(12.dp),
               verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
               Text(
                 text = strings.creditsHeader,
-                color = KidouColors.Amber,
+                color = palette.accentPrimary,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
               )
               Text(
                 text = strings.creditsBody,
-                color = KidouColors.Muted,
+                color = palette.muted,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 11.sp,
                 lineHeight = 16.sp,
@@ -343,13 +354,13 @@ fun MenuSheet(
               shape = RectangleShape,
               colors =
                 ButtonDefaults.buttonColors(
-                  containerColor = KidouColors.Red.copy(alpha = 0.18f),
-                  contentColor = KidouColors.Red,
+                  containerColor = palette.statusDanger.copy(alpha = 0.16f),
+                  contentColor = palette.statusDanger,
                 ),
               modifier =
                 Modifier
                   .fillMaxWidth()
-                  .border(1.dp, KidouColors.Red.copy(alpha = 0.6f), RectangleShape),
+                  .border(1.dp, palette.statusDanger.copy(alpha = 0.6f), RectangleShape),
             ) {
               Text(strings.resetAllButton, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
             }
@@ -357,19 +368,19 @@ fun MenuSheet(
             Spacer(modifier = Modifier.height(4.dp))
             PixelDivider()
 
-            // Non-game Developer Debug Section (§9)
+            // Non-game Developer Debug Section
             Column(
               modifier =
                 Modifier
                   .fillMaxWidth()
-                  .background(Color(0xFF141118), RectangleShape)
-                  .border(1.dp, KidouColors.Muted.copy(alpha = 0.5f), RectangleShape)
+                  .background(palette.debugPanelBg, RectangleShape)
+                  .border(1.dp, palette.muted.copy(alpha = 0.5f), RectangleShape)
                   .padding(12.dp),
               verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
               Text(
                 text = strings.debugSectionHeader,
-                color = KidouColors.Muted,
+                color = palette.muted,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
@@ -379,21 +390,28 @@ fun MenuSheet(
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_bulk_apply" },
               ) {
-                Text(strings.debugBulkApply, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = KidouColors.Cyan)
+                Text(strings.debugBulkApply, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = palette.accentSecondary)
               }
               OutlinedButton(
                 onClick = onDebugResetTranslations,
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_reset_trans" },
               ) {
-                Text(strings.debugResetTranslations, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = KidouColors.Amber)
+                Text(strings.debugResetTranslations, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = palette.accentPrimary)
               }
               OutlinedButton(
-                onClick = onDebugFill19Clears,
+                onClick = onDebugFill19ClearsBoard1,
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_fill_19" },
               ) {
-                Text(strings.debugFill19Clears, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = KidouColors.Green)
+                Text(strings.debugFill19ClearsBoard1, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = palette.statusSuccess)
+              }
+              OutlinedButton(
+                onClick = onDebugFill19ClearsBoard2,
+                shape = RectangleShape,
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_fill_19_b2" },
+              ) {
+                Text(strings.debugFill19ClearsBoard2, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = palette.statusSuccess)
               }
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -406,9 +424,9 @@ fun MenuSheet(
   if (showResetConfirm) {
     AlertDialog(
       onDismissRequest = { showResetConfirm = false },
-      containerColor = KidouColors.Panel,
-      titleContentColor = KidouColors.Glyph,
-      textContentColor = KidouColors.Muted,
+      containerColor = palette.panel,
+      titleContentColor = palette.glyph,
+      textContentColor = palette.muted,
       shape = RectangleShape,
       title = { Text(strings.resetConfirmTitle, fontFamily = FontFamily.Monospace) },
       text = {
@@ -421,12 +439,12 @@ fun MenuSheet(
             onResetAll()
           },
         ) {
-          Text(strings.confirmReset, color = KidouColors.Red, fontFamily = FontFamily.Monospace)
+          Text(strings.confirmReset, color = palette.statusDanger, fontFamily = FontFamily.Monospace)
         }
       },
       dismissButton = {
         TextButton(onClick = { showResetConfirm = false }) {
-          Text(strings.cancel, color = KidouColors.Muted, fontFamily = FontFamily.Monospace)
+          Text(strings.cancel, color = palette.muted, fontFamily = FontFamily.Monospace)
         }
       },
     )
@@ -440,12 +458,13 @@ private fun ToggleSettingRow(
   onCheckedChange: (Boolean) -> Unit,
   contentDesc: String,
 ) {
+  val palette = KidouTheme.palette
   Row(
     modifier =
       Modifier
         .fillMaxWidth()
-        .background(KidouColors.Tile, RectangleShape)
-        .border(1.dp, KidouColors.Border, RectangleShape)
+        .background(palette.tile, RectangleShape)
+        .border(1.dp, palette.border, RectangleShape)
         .padding(horizontal = 14.dp, vertical = 8.dp),
     horizontalArrangement = Arrangement.SpaceBetween,
     verticalAlignment = Alignment.CenterVertically,
@@ -453,7 +472,7 @@ private fun ToggleSettingRow(
     Text(
       text = label,
       fontFamily = FontFamily.Monospace,
-      color = KidouColors.Glyph,
+      color = palette.glyph,
       fontSize = 13.sp,
     )
     Switch(
@@ -462,8 +481,8 @@ private fun ToggleSettingRow(
       modifier = Modifier.semantics { contentDescription = contentDesc },
       colors =
         SwitchDefaults.colors(
-          checkedThumbColor = KidouColors.Background,
-          checkedTrackColor = KidouColors.Amber,
+          checkedThumbColor = palette.tile,
+          checkedTrackColor = palette.accentPrimary,
         ),
     )
   }
@@ -476,14 +495,18 @@ private fun MenuTabButton(
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val palette = KidouTheme.palette
   Box(
     contentAlignment = Alignment.Center,
     modifier =
       modifier
-        .background(if (selected) KidouColors.Cyan.copy(alpha = 0.15f) else KidouColors.Tile, RectangleShape)
+        .background(
+          if (selected) palette.accentSecondary.copy(alpha = 0.16f) else palette.panelSunken,
+          RectangleShape,
+        )
         .border(
           1.5.dp,
-          if (selected) KidouColors.Cyan else KidouColors.Border,
+          if (selected) palette.accentSecondary else palette.border,
           RectangleShape,
         )
         .clickable(onClick = onClick)
@@ -491,7 +514,7 @@ private fun MenuTabButton(
   ) {
     Text(
       text = label,
-      color = if (selected) KidouColors.Cyan else KidouColors.Muted,
+      color = if (selected) palette.accentSecondary else palette.muted,
       fontFamily = FontFamily.Monospace,
       fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
       fontSize = 12.sp,
@@ -501,19 +524,20 @@ private fun MenuTabButton(
 
 @Composable
 private fun StatRow(label: String, value: String) {
+  val palette = KidouTheme.palette
   Row(
     modifier =
       Modifier
         .fillMaxWidth()
-        .background(KidouColors.Tile, RectangleShape)
-        .border(1.dp, KidouColors.Border, RectangleShape)
+        .background(palette.tile, RectangleShape)
+        .border(1.dp, palette.border, RectangleShape)
         .padding(horizontal = 14.dp, vertical = 10.dp),
     horizontalArrangement = Arrangement.SpaceBetween,
   ) {
-    Text(text = label, color = KidouColors.Muted, fontFamily = FontFamily.Monospace, fontSize = 13.sp)
+    Text(text = label, color = palette.muted, fontFamily = FontFamily.Monospace, fontSize = 13.sp)
     Text(
       text = value,
-      color = KidouColors.Glyph,
+      color = palette.glyph,
       fontFamily = FontFamily.Monospace,
       fontWeight = FontWeight.Bold,
       fontSize = 13.sp,
@@ -521,10 +545,10 @@ private fun StatRow(label: String, value: String) {
   }
 }
 
-fun lampColorOf(lamp: LampState): Color =
+fun lampColorOf(lamp: LampState, palette: KidouPalette): Color =
   when (lamp) {
-    LampState.OFF -> KidouColors.LampOff
-    LampState.AMBER -> KidouColors.Amber
-    LampState.GREEN -> KidouColors.Green
-    LampState.RED -> KidouColors.Red
+    LampState.OFF -> palette.lampOff
+    LampState.AMBER -> palette.statusWarning
+    LampState.GREEN -> palette.statusSuccess
+    LampState.RED -> palette.statusDanger
   }

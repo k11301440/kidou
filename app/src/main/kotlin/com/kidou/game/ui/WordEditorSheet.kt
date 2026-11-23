@@ -37,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
@@ -58,7 +57,7 @@ import com.kidou.game.model.WordDef
 import com.kidou.game.ui.components.GlyphSentenceRow
 import com.kidou.game.ui.components.PixelGlyph
 import com.kidou.game.ui.i18n.stringsFor
-import com.kidou.game.ui.theme.KidouColors
+import com.kidou.game.ui.theme.KidouTheme
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -77,6 +76,7 @@ fun WordEditorSheet(
   onSwitchWord: (String) -> Unit,
   onDismiss: () -> Unit,
 ) {
+  val palette = KidouTheme.palette
   val strings = stringsFor(language)
   val wordDef = words[wordId]
   val existing = dictionary[wordId]
@@ -90,7 +90,6 @@ fun WordEditorSheet(
   }
   var memo by remember(wordId) { mutableStateOf(existing?.memo ?: "") }
 
-  // Sync if ad reveal updates the entry while sheet is open
   val latestResolved = existing?.resolvedTranslation(wordDef, language).orEmpty()
   LaunchedEffect(existing?.source, latestResolved) {
     if (existing?.source == EntrySource.AD_REVEALED && latestResolved.isNotEmpty()) {
@@ -114,8 +113,8 @@ fun WordEditorSheet(
   ModalBottomSheet(
     onDismissRequest = onDismiss,
     sheetState = sheetState,
-    containerColor = KidouColors.Panel,
-    contentColor = KidouColors.Glyph,
+    containerColor = palette.panel,
+    contentColor = palette.glyph,
     shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp),
   ) {
     Column(
@@ -137,34 +136,34 @@ fun WordEditorSheet(
           modifier =
             Modifier
               .size(72.dp)
-              .background(KidouColors.PanelSunken, RectangleShape)
-              .border(2.dp, Color(selectedTag.colorHex).copy(alpha = 0.75f), RectangleShape),
+              .background(palette.panelSunken, RectangleShape)
+              .border(2.dp, palette.tagColor(selectedTag).copy(alpha = 0.75f), RectangleShape),
         ) {
           PixelGlyph(
             grid = glyphs[wordId],
             size = 52.dp,
-            color = KidouColors.Glyph,
+            color = palette.glyph,
           )
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
           Text(
             text = strings.wordMemoTitle,
-            color = KidouColors.Muted,
+            color = palette.muted,
             fontFamily = FontFamily.Monospace,
             fontSize = 11.sp,
           )
           Text(
             text = translationField.text.trim().ifEmpty { strings.unregistered },
             color =
-              if (translationField.text.isNotBlank()) Color(selectedTag.colorHex)
-              else KidouColors.Muted,
+              if (translationField.text.isNotBlank()) palette.tagColor(selectedTag)
+              else palette.muted,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
           )
           Text(
             text = strings.wordMemoHint,
-            color = KidouColors.Muted,
+            color = palette.muted,
             fontFamily = FontFamily.Monospace,
             fontSize = 11.sp,
           )
@@ -185,15 +184,14 @@ fun WordEditorSheet(
             .semantics { contentDescription = "word_translation_input" },
         colors =
           OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = KidouColors.Amber,
-            unfocusedBorderColor = KidouColors.Border,
-            focusedTextColor = KidouColors.Glyph,
-            unfocusedTextColor = KidouColors.Glyph,
-            cursorColor = KidouColors.Amber,
+            focusedBorderColor = palette.accentPrimary,
+            unfocusedBorderColor = palette.border,
+            focusedTextColor = palette.glyph,
+            unfocusedTextColor = palette.glyph,
+            cursorColor = palette.accentPrimary,
           ),
       )
 
-      // Rewarded Ad button to reveal expected translation (player-facing feature, §7)
       val isDefaultWord = wordDef?.isDefaultSet == true
       val isAdRevealed = existing?.source == EntrySource.AD_REVEALED
       if (!isDefaultWord) {
@@ -218,13 +216,13 @@ fun WordEditorSheet(
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
             fontSize = 12.sp,
-            color = if (isAdRevealed) KidouColors.Green else KidouColors.Cyan,
+            color = if (isAdRevealed) palette.statusSuccess else palette.accentSecondary,
           )
         }
         if (adErrorToast) {
           Text(
             text = strings.adUnavailableTapRetry,
-            color = KidouColors.Red,
+            color = palette.statusDanger,
             fontFamily = FontFamily.Monospace,
             fontSize = 11.sp,
           )
@@ -234,7 +232,7 @@ fun WordEditorSheet(
       Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
           text = strings.tagSectionLabel,
-          color = KidouColors.Muted,
+          color = palette.muted,
           fontFamily = FontFamily.Monospace,
           fontSize = 11.sp,
         )
@@ -244,16 +242,16 @@ fun WordEditorSheet(
         ) {
           WordColorTag.entries.forEach { tag ->
             val isSelected = tag == selectedTag
-            val tagColor = Color(tag.colorHex)
+            val tagColor = palette.tagColor(tag)
             Row(
               verticalAlignment = Alignment.CenterVertically,
               horizontalArrangement = Arrangement.spacedBy(6.dp),
               modifier =
                 Modifier
-                  .background(if (isSelected) tagColor.copy(alpha = 0.2f) else KidouColors.Tile, RectangleShape)
+                  .background(if (isSelected) tagColor.copy(alpha = 0.2f) else palette.tile, RectangleShape)
                   .border(
                     width = if (isSelected) 1.5.dp else 1.dp,
-                    color = if (isSelected) tagColor else KidouColors.Border,
+                    color = if (isSelected) tagColor else palette.border,
                     shape = RectangleShape,
                   )
                   .clickable { selectedTag = tag }
@@ -262,7 +260,7 @@ fun WordEditorSheet(
               Box(modifier = Modifier.size(8.dp).background(tagColor))
               Text(
                 text = tag.label(language),
-                color = if (isSelected) tagColor else KidouColors.Glyph,
+                color = if (isSelected) tagColor else palette.glyph,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 12.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -281,11 +279,11 @@ fun WordEditorSheet(
         modifier = Modifier.fillMaxWidth(),
         colors =
           OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = KidouColors.Amber,
-            unfocusedBorderColor = KidouColors.Border,
-            focusedTextColor = KidouColors.Glyph,
-            unfocusedTextColor = KidouColors.Glyph,
-            cursorColor = KidouColors.Amber,
+            focusedBorderColor = palette.accentPrimary,
+            unfocusedBorderColor = palette.border,
+            focusedTextColor = palette.glyph,
+            unfocusedTextColor = palette.glyph,
+            cursorColor = palette.accentPrimary,
           ),
       )
 
@@ -293,7 +291,7 @@ fun WordEditorSheet(
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
           Text(
             text = strings.contextsLabel,
-            color = KidouColors.Muted,
+            color = palette.muted,
             fontFamily = FontFamily.Monospace,
             fontSize = 11.sp,
           )
@@ -302,8 +300,8 @@ fun WordEditorSheet(
               Modifier
                 .fillMaxWidth()
                 .heightIn(max = 160.dp)
-                .background(KidouColors.PanelSunken, RectangleShape)
-                .border(1.dp, KidouColors.Border, RectangleShape)
+                .background(palette.panelSunken, RectangleShape)
+                .border(1.dp, palette.border, RectangleShape)
                 .verticalScroll(rememberScrollState())
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -336,15 +334,15 @@ fun WordEditorSheet(
           shape = RectangleShape,
           modifier = Modifier.weight(1f),
         ) {
-          Text(strings.clear, fontFamily = FontFamily.Monospace, color = KidouColors.Muted)
+          Text(strings.clear, fontFamily = FontFamily.Monospace, color = palette.muted)
         }
         Button(
           onClick = { onSave(translationField.text, selectedTag, memo) },
           shape = RectangleShape,
           colors =
             ButtonDefaults.buttonColors(
-              containerColor = KidouColors.Amber,
-              contentColor = KidouColors.Background,
+              containerColor = palette.accentPrimary,
+              contentColor = if (palette.isDark) palette.background else palette.tile,
             ),
           modifier = Modifier.weight(2f).semantics { contentDescription = "word_save_btn" },
         ) {

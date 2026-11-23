@@ -1,4 +1,6 @@
 {
+  "titleSubtitleJa": "言語解読 × 試行錯誤",
+  "titleSubtitleEn": "DECIPHER × EXPERIMENT",
   "guideLines": [
     [["n_board"], ["d_1", "d_0", "d_0"], ["m_among"], ["d_4", "d_0"], ["v_activate"], ["m_if"]],
     [["n_board", "m_next"], ["v_open"]],
@@ -389,18 +391,632 @@
         {
           "levelNumber": 1,
           "puzzleType": "CONDITION",
-          "unlockedControls": ["conduit", "lock", "key", "dial", "valve", "lever", "button"],
+          "unlockedControls": ["sw_a", "sw_b", "button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_button"], ["v_push"]]
+          ],
+          "initialState": { "swA": false, "swB": false, "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": {
+            "logicClauses": [
+              {
+                "operator": "AND",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"]]
+              }
+            ],
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [["n_switch"], ["v_activate"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 2,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_button"], ["v_push"]]
+          ],
+          "initialState": { "swA": false, "swB": false, "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": {
+            "logicClauses": [
+              {
+                "operator": "OR",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_2"], ["m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"]]
+              }
+            ],
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [["n_switch"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 3,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "button"],
+          "plates": [
+            [["n_switch", "d_1"], ["v_activate"]],
+            [["n_switch", "d_2"], ["v_activate", "m_not"]],
+            [["n_button"], ["v_push"]]
+          ],
+          "initialState": { "swA": false, "swB": true, "lamp": "amber", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": {
+            "logicClauses": [
+              {
+                "operator": "AND",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "false" }
+                ],
+                "hintPrimary": [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"], ["adj_danger"]]
+              }
+            ],
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [["n_switch", "d_1"], ["v_activate"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 4,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["m_not"]],
+            [["n_button"], ["v_push"]]
+          ],
+          "initialState": { "swA": true, "swB": true, "lamp": "amber", "primaryMessage": [["n_machine"], ["v_stop"], ["adj_danger"]], "secondaryMessage": [] },
+          "requirements": {
+            "logicClauses": [
+              {
+                "operator": "XOR",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch"], ["v_match", "m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"], ["adj_danger"]]
+              }
+            ],
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [["n_conduit"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 5,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "sw_c", "button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_2"], ["v_activate"]],
+            [["op_and"], ["n_switch", "d_3"], ["v_activate"]],
+            [["n_button"], ["v_push"]]
+          ],
+          "initialState": { "swA": false, "swB": false, "swC": false, "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": {
+            "logicClauses": [
+              {
+                "operator": "OR",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_2"], ["m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"]]
+              },
+              {
+                "operator": "AND",
+                "checks": [
+                  { "module": "sw_c", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch", "d_3"], ["v_activate", "m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"]]
+              }
+            ],
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [["n_core"], ["v_activate"]],
+          "completionSecondary": [["adj_complete"]]
+        },
+        {
+          "levelNumber": 6,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["hold_button"],
+          "plates": [
+            [["n_button"], ["v_hold"]]
+          ],
+          "initialState": { "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "requireHold": true },
+          "completionPrimary": [["n_button"], ["v_hold"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 7,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["slider", "button"],
+          "plates": [
+            [["n_slider"], ["v_swipe"], ["v_right"]],
+            [["n_button"], ["v_push"]]
+          ],
+          "initialState": { "slider": "left", "lamp": "off", "primaryMessage": [["n_slider"], ["v_left"]], "secondaryMessage": [] },
+          "requirements": { "sliderEq": "right", "buttonPressesEq": 1 },
+          "completionPrimary": [["n_slider"], ["v_right"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 8,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["slider", "lever", "hold_button"],
+          "plates": [
+            [["n_slider"], ["v_swipe"], ["v_left"]],
+            [["n_lever"], ["v_pull"]],
+            [["n_button"], ["v_hold"]]
+          ],
+          "initialState": { "slider": "right", "lever": "up", "lamp": "amber", "primaryMessage": [["n_slider"], ["v_right"]], "secondaryMessage": [] },
+          "requirements": { "sliderEq": "left", "leverEq": "down", "requireHold": true },
+          "completionPrimary": [["n_lever"], ["v_down"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 9,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["conduit", "sw_a", "sw_b", "hold_button"],
           "plates": [
             [["n_conduit"], ["v_connect"]],
-            [["n_lock"], ["v_lock"]],
-            [["n_key"], ["v_insert"]],
-            [["n_dial"], ["v_match"], ["d_1", "d_0", "d_0"]],
-            [["n_valve"], ["v_match"], ["d_3", "d_2"]],
-            [["n_lever"], ["v_down"]],
-            [["n_button"], ["v_push"], ["d_2", "m_times"]]
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_button"], ["v_hold"]]
           ],
-          "initialState": { "conduit": "cut", "lock": "unlocked", "key": "out", "dial": 10, "valve": 5, "lever": "up", "lamp": "amber", "primaryMessage": [["n_core"], ["v_stop"]], "secondaryMessage": [["n_lamp"], ["v_close"]] },
-          "requirements": { "conduitEq": "connected", "lockEq": "locked", "keyEq": "in", "dialEq": 25, "valveEq": 17, "leverEq": "down", "buttonPressesEq": 2 },
+          "initialState": { "conduit": "cut", "swA": false, "swB": false, "lamp": "off", "primaryMessage": [["n_conduit"], ["v_cut"]], "secondaryMessage": [] },
+          "requirements": {
+            "conduitEq": "connected",
+            "logicClauses": [
+              {
+                "operator": "AND",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"]]
+              }
+            ],
+            "requireHold": true
+          },
+          "completionPrimary": [["n_conduit"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 10,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["lock", "key", "slider", "hold_button"],
+          "plates": [
+            [["n_lock"], ["v_unlock"]],
+            [["n_key"], ["v_insert"]],
+            [["n_slider"], ["v_swipe"], ["v_right"]],
+            [["n_button"], ["v_hold"]]
+          ],
+          "initialState": { "lock": "locked", "key": "out", "slider": "left", "lamp": "off", "primaryMessage": [["n_lock"], ["v_lock"]], "secondaryMessage": [] },
+          "requirements": { "lockEq": "unlocked", "keyEq": "in", "sliderEq": "right", "requireHold": true },
+          "completionPrimary": [["n_gate"], ["v_open"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 11,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["dual_button"],
+          "plates": [
+            [["n_button", "d_2"], ["m_together"], ["v_push"], ["d_1", "m_times"]]
+          ],
+          "initialState": { "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": { "dualPressesEq": 1 },
+          "completionPrimary": [["n_button", "d_2"], ["m_together"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 12,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["lever", "dual_button"],
+          "plates": [
+            [["n_lever"], ["v_up"]],
+            [["n_button", "d_2"], ["m_together"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "lever": "down", "lamp": "amber", "primaryMessage": [["n_lever"], ["v_down"]], "secondaryMessage": [] },
+          "requirements": { "leverEq": "up", "dualPressesEq": 2 },
+          "completionPrimary": [["n_lever"], ["v_up"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 13,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "slider", "dual_button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["m_not"]],
+            [["n_slider"], ["v_swipe"], ["v_left"]],
+            [["n_button", "d_2"], ["m_together"], ["v_push"]]
+          ],
+          "initialState": { "swA": false, "swB": false, "slider": "right", "lamp": "off", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": {
+            "sliderEq": "left",
+            "logicClauses": [
+              {
+                "operator": "XOR",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch"], ["v_match", "m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"], ["adj_danger"]]
+              }
+            ],
+            "dualPressesEq": 1
+          },
+          "completionPrimary": [["n_slider"], ["v_left"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 14,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_c", "dial", "hold_button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_3"], ["v_activate"]],
+            [["n_dial"], ["v_match"], ["d_1", "d_3"]],
+            [["n_button"], ["v_hold"]]
+          ],
+          "initialState": { "swA": false, "swC": false, "dial": 2, "lamp": "amber", "primaryMessage": [["n_dial"], ["d_2"]], "secondaryMessage": [] },
+          "requirements": {
+            "dialEq": 8,
+            "logicClauses": [
+              {
+                "operator": "AND",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_c", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_3"], ["m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"]]
+              }
+            ],
+            "requireHold": true
+          },
+          "completionPrimary": [["n_dial"], ["v_match"], ["d_1", "d_3"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 15,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["conduit", "slider", "valve", "dual_button"],
+          "plates": [
+            [["n_conduit"], ["v_connect"]],
+            [["n_slider"], ["v_swipe"], ["v_right"]],
+            [["n_valve"], ["v_match"], ["d_2", "d_1"]],
+            [["n_button", "d_2"], ["m_together"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "conduit": "cut", "slider": "left", "valve": 1, "lamp": "off", "primaryMessage": [["n_valve"], ["d_1"]], "secondaryMessage": [] },
+          "requirements": { "conduitEq": "connected", "sliderEq": "right", "valveEq": 11, "dualPressesEq": 2 },
+          "completionPrimary": [["n_valve"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 16,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["slider", "hold_button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_slider"], ["v_swipe"], ["v_right"]],
+            [["d_2", "m_ord"], ["n_button"], ["v_hold"]]
+          ],
+          "initialState": { "slider": "left", "lamp": "amber", "primaryMessage": [["n_slider"], ["v_left"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "slider_right", "repeatCount": 1, "hintPrimary": [["n_slider"], ["v_right", "m_not"]] },
+            { "trigger": "button_hold", "repeatCount": 1, "hintPrimary": [["n_button"], ["v_hold", "m_not"]] }
+          ],
+          "completionPrimary": [["n_slider"], ["v_right"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 17,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["sw_a", "key", "dual_button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_switch", "d_1"], ["v_activate"]],
+            [["d_2", "m_ord"], ["n_key"], ["v_insert"]],
+            [["d_3", "m_ord"], ["n_button", "d_2"], ["m_together"], ["v_push"]]
+          ],
+          "initialState": { "swA": false, "key": "out", "lamp": "amber", "primaryMessage": [["n_machine"], ["v_stop"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "sw_a_toggle", "repeatCount": 1, "hintPrimary": [["n_switch", "d_1"], ["v_activate", "m_not"]] },
+            { "trigger": "key_insert", "repeatCount": 1, "hintPrimary": [["n_key"], ["v_insert", "m_not"]] },
+            { "trigger": "dual_push", "repeatCount": 1, "hintPrimary": [["n_button", "d_2"], ["m_together", "m_not"]] }
+          ],
+          "completionPrimary": [["n_key"], ["v_insert"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 18,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["lock", "slider", "hold_button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_lock"], ["v_unlock"]],
+            [["d_2", "m_ord"], ["n_slider"], ["v_swipe"], ["v_right"]],
+            [["d_3", "m_ord"], ["n_button"], ["v_hold"]]
+          ],
+          "initialState": { "lock": "locked", "slider": "left", "lamp": "amber", "primaryMessage": [["n_lock"], ["v_lock"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "lock_unlock", "repeatCount": 1, "hintPrimary": [["n_lock"], ["v_unlock", "m_not"]] },
+            { "trigger": "slider_right", "repeatCount": 1, "hintPrimary": [["n_slider"], ["v_right", "m_not"]] },
+            { "trigger": "button_hold", "repeatCount": 1, "hintPrimary": [["n_button"], ["v_hold", "m_not"]] }
+          ],
+          "completionPrimary": [["n_gate"], ["v_open"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 19,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["conduit", "sw_b", "dial", "dual_button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_conduit"], ["v_connect"]],
+            [["d_2", "m_ord"], ["n_switch", "d_2"], ["v_activate"]],
+            [["d_3", "m_ord"], ["n_dial"], ["v_increase"], ["d_2", "m_times"]],
+            [["d_4", "m_ord"], ["n_button", "d_2"], ["m_together"], ["v_push"]]
+          ],
+          "initialState": { "conduit": "cut", "swB": false, "dial": 0, "lamp": "amber", "primaryMessage": [["n_conduit"], ["v_cut"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "conduit_connect", "repeatCount": 1, "hintPrimary": [["n_conduit"], ["v_connect", "m_not"]] },
+            { "trigger": "sw_b_toggle", "repeatCount": 1, "hintPrimary": [["n_switch", "d_2"], ["v_activate", "m_not"]] },
+            { "trigger": "dial_inc", "repeatCount": 2, "hintPrimary": [["n_dial"], ["v_increase", "m_not"]] },
+            { "trigger": "dual_push", "repeatCount": 1, "hintPrimary": [["n_button", "d_2"], ["m_together", "m_not"]] }
+          ],
+          "completionPrimary": [["n_conduit"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 20,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": ["key", "slider", "lever", "hold_button"],
+          "plates": [
+            [["d_1", "m_ord"], ["n_key"], ["v_insert"]],
+            [["d_2", "m_ord"], ["n_slider"], ["v_swipe"], ["v_left"]],
+            [["d_3", "m_ord"], ["n_lever"], ["v_pull"]],
+            [["d_4", "m_ord"], ["n_button"], ["v_hold"]]
+          ],
+          "initialState": { "key": "out", "slider": "right", "lever": "up", "lamp": "amber", "primaryMessage": [["n_key"], ["v_remove"]], "secondaryMessage": [] },
+          "sequenceSteps": [
+            { "trigger": "key_insert", "repeatCount": 1, "hintPrimary": [["n_key"], ["v_insert", "m_not"]] },
+            { "trigger": "slider_left", "repeatCount": 1, "hintPrimary": [["n_slider"], ["v_left", "m_not"]] },
+            { "trigger": "lever_pull", "repeatCount": 1, "hintPrimary": [["n_lever"], ["v_pull", "m_not"]] },
+            { "trigger": "button_hold", "repeatCount": 1, "hintPrimary": [["n_button"], ["v_hold", "m_not"]] }
+          ],
+          "completionPrimary": [["n_core"], ["v_activate"]],
+          "completionSecondary": [["adj_complete"]]
+        },
+        {
+          "levelNumber": 21,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "sw_c", "slider", "dial", "button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_switch", "d_3"], ["v_activate", "m_not"]],
+            [["n_slider"], ["v_swipe"], ["v_right"]],
+            [["n_dial"], ["v_match"], ["d_1", "d_4"]],
+            [["n_button"], ["v_push"]]
+          ],
+          "initialState": { "swA": false, "swB": false, "swC": true, "slider": "left", "dial": 3, "lamp": "amber", "primaryMessage": [["n_dial"], ["d_3"]], "secondaryMessage": [] },
+          "requirements": {
+            "sliderEq": "right",
+            "dialEq": 9,
+            "logicClauses": [
+              {
+                "operator": "AND",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" },
+                  { "module": "sw_c", "expected": "false" }
+                ],
+                "hintPrimary": [["n_switch"], ["v_match", "m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"], ["adj_danger"]]
+              }
+            ],
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [["n_dial"], ["v_match"], ["d_1", "d_4"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 22,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_c", "lock", "key", "valve", "hold_button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_3"], ["v_activate"]],
+            [["n_lock"], ["v_unlock"]],
+            [["n_key"], ["v_insert"]],
+            [["n_valve"], ["v_match"], ["d_2", "d_3"]],
+            [["n_button"], ["v_hold"]]
+          ],
+          "initialState": { "swA": false, "swC": false, "lock": "locked", "key": "out", "valve": 4, "lamp": "off", "primaryMessage": [["n_valve"], ["d_4"]], "secondaryMessage": [] },
+          "requirements": {
+            "lockEq": "unlocked",
+            "keyEq": "in",
+            "valveEq": 13,
+            "logicClauses": [
+              {
+                "operator": "OR",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_c", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_3"], ["m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"]]
+              }
+            ],
+            "requireHold": true
+          },
+          "completionPrimary": [["n_valve"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 23,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "conduit", "lever", "dial", "dual_button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["m_not"]],
+            [["n_conduit"], ["v_connect"]],
+            [["n_lever"], ["v_down"]],
+            [["n_dial"], ["v_match"], ["d_3", "d_2"]],
+            [["n_button", "d_2"], ["m_together"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "swA": true, "swB": true, "conduit": "cut", "lever": "up", "dial": 5, "lamp": "amber", "primaryMessage": [["n_core"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": {
+            "conduitEq": "connected",
+            "leverEq": "down",
+            "dialEq": 17,
+            "logicClauses": [
+              {
+                "operator": "XOR",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch"], ["v_match", "m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"], ["adj_danger"]]
+              }
+            ],
+            "dualPressesEq": 2
+          },
+          "completionPrimary": [["n_conduit"], ["v_flow"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 24,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "slider", "lock", "dial", "valve", "hold_button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_slider"], ["v_swipe"], ["v_right"]],
+            [["n_lock"], ["v_lock"]],
+            [["n_dial"], ["v_match"], ["d_4", "d_1"]],
+            [["n_valve"], ["v_match"], ["d_3", "d_0"]],
+            [["n_button"], ["v_hold"]]
+          ],
+          "initialState": { "swA": false, "swB": false, "slider": "left", "lock": "unlocked", "dial": 10, "valve": 5, "lamp": "amber", "primaryMessage": [["n_core"], ["v_stop"]], "secondaryMessage": [] },
+          "requirements": {
+            "sliderEq": "right",
+            "lockEq": "locked",
+            "dialEq": 21,
+            "valveEq": 15,
+            "logicClauses": [
+              {
+                "operator": "AND",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"]]
+              }
+            ],
+            "requireHold": true
+          },
+          "completionPrimary": [["n_gate"], ["v_open"]],
+          "completionSecondary": [["n_machine"], ["v_activate"], ["adj_complete"]]
+        },
+        {
+          "levelNumber": 25,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "sw_c", "conduit", "lock", "key", "slider", "lever", "dial", "valve", "dual_button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_switch", "d_3"], ["v_activate", "m_not"]],
+            [["n_conduit"], ["v_connect"]],
+            [["n_lock"], ["v_unlock"]],
+            [["n_key"], ["v_insert"]],
+            [["n_slider"], ["v_swipe"], ["v_right"]],
+            [["n_lever"], ["v_up"]],
+            [["n_dial"], ["v_match"], ["d_4", "d_4"]],
+            [["n_valve"], ["v_match"], ["d_4", "d_0"]],
+            [["n_button", "d_2"], ["m_together"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "swA": false, "swB": false, "swC": true, "conduit": "cut", "lock": "locked", "key": "out", "slider": "left", "lever": "down", "dial": 10, "valve": 5, "lamp": "amber", "primaryMessage": [["n_core"], ["v_stop"]], "secondaryMessage": [["n_lamp"], ["v_close"]] },
+          "requirements": {
+            "conduitEq": "connected",
+            "lockEq": "unlocked",
+            "keyEq": "in",
+            "sliderEq": "right",
+            "leverEq": "up",
+            "dialEq": 24,
+            "valveEq": 20,
+            "logicClauses": [
+              {
+                "operator": "AND",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" },
+                  { "module": "sw_c", "expected": "false" }
+                ],
+                "hintPrimary": [["n_switch"], ["v_match", "m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"], ["adj_danger"]]
+              }
+            ],
+            "dualPressesEq": 2
+          },
+          "completionPrimary": [["n_machine", "n_core"], ["v_activate"], ["adj_complete"]],
+          "completionSecondary": [["n_board", "m_next"], ["v_open"]]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "titleSlots": [["n_board"], ["d_3"]],
+      "requiredBoardId": 2,
+      "requiredClears": 20,
+      "totalSlots": 25,
+      "storyLines": [
+        [["n_core"], ["n_switch"], ["v_flow"]],
+        [["n_gate"], ["v_open"]],
+        [["n_ahead"], ["v_proceed"]]
+      ],
+      "levels": [
+        {
+          "levelNumber": 1,
+          "puzzleType": "CONDITION",
+          "unlockedControls": ["sw_a", "sw_b", "slider", "conduit", "dial", "dual_button"],
+          "plates": [
+            [["n_switch", "d_1"], ["op_or"], ["n_switch", "d_2"], ["v_activate"]],
+            [["n_switch", "d_1"], ["op_and"], ["n_switch", "d_2"], ["m_not"]],
+            [["n_slider"], ["v_swipe"], ["v_right"]],
+            [["n_conduit"], ["v_connect"]],
+            [["n_dial"], ["v_match"], ["d_1", "d_0", "d_0"]],
+            [["n_button", "d_2"], ["m_together"], ["v_push"], ["d_2", "m_times"]]
+          ],
+          "initialState": { "swA": false, "swB": false, "slider": "left", "conduit": "cut", "dial": 15, "lamp": "amber", "primaryMessage": [["n_core"], ["v_stop"]], "secondaryMessage": [["n_lamp"], ["v_close"]] },
+          "requirements": {
+            "sliderEq": "right",
+            "conduitEq": "connected",
+            "dialEq": 25,
+            "logicClauses": [
+              {
+                "operator": "XOR",
+                "checks": [
+                  { "module": "sw_a", "expected": "true" },
+                  { "module": "sw_b", "expected": "true" }
+                ],
+                "hintPrimary": [["n_switch"], ["v_match", "m_not"]],
+                "hintSecondary": [["n_machine"], ["v_stop"], ["adj_danger"]]
+              }
+            ],
+            "dualPressesEq": 2
+          },
           "completionPrimary": [["n_core"], ["v_activate"], ["adj_complete"]],
           "completionSecondary": [["n_lamp"], ["v_open"]]
         }

@@ -5,6 +5,8 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.kidou.game.model.AppLanguage
 import com.kidou.game.model.SaveDataV2
+import com.kidou.game.ui.theme.ColorTheme
+import com.kidou.game.ui.theme.ThemeMode
 import java.io.File
 
 class SaveRepository(context: Context) {
@@ -24,6 +26,8 @@ class SaveRepository(context: Context) {
           clearedLevelKeys = raw.clearedLevelKeys ?: emptySet(),
           operationLog = raw.operationLog ?: emptyList(),
           language = raw.language ?: AppLanguage.JA,
+          themeMode = raw.themeMode ?: ThemeMode.DARK,
+          colorTheme = raw.colorTheme ?: ColorTheme.AMBER_RUIN,
         )
       }
     }.getOrNull()

@@ -9,6 +9,8 @@ import com.kidou.game.model.LampState
 import com.kidou.game.model.LevelDef
 import com.kidou.game.model.LevelRuntimeState
 import com.kidou.game.model.LoadedGameData
+import com.kidou.game.model.LogicClause
+import com.kidou.game.model.ModuleCheck
 import com.kidou.game.model.OperationLogEntry
 import com.kidou.game.model.PuzzleType
 import com.kidou.game.model.SoundEffect
@@ -38,7 +40,12 @@ object LevelEngine {
       lock = init.lock,
       dial = init.dial,
       valve = init.valve,
+      swA = init.swA,
+      swB = init.swB,
+      swC = init.swC,
+      slider = init.slider,
       buttonPresses = 0,
+      dualPresses = 0,
       seqStep = 0,
       seqSubProgress = 0,
       isCleared = false,
@@ -69,9 +76,10 @@ object LevelEngine {
     logId: Long,
   ): LevelStepResult {
     val actionSlots = triggerToSlots(trigger)
+    val isPrimarySubmit = trigger in setOf("button_push", "button_hold", "dual_push")
 
-    if (trigger != "button_push") {
-      val updated = applyModuleTrigger(state, trigger).copy(buttonPresses = 0)
+    if (!isPrimarySubmit) {
+      val updated = applyModuleTrigger(state, trigger).copy(buttonPresses = 0, dualPresses = 0)
       val (primary, secondary, sound) = moduleReaction(updated, trigger)
       val nextState =
         updated.copy(
@@ -79,57 +87,75 @@ object LevelEngine {
           primaryMessage = primary,
           secondaryMessage = secondary,
         )
-      val logEntry =
-        OperationLogEntry(
-          id = logId,
-          timestampMs = timestampMs,
-          boardId = state.boardId,
-          levelNumber = state.levelNumber,
-          trigger = trigger,
-          actionLabelSlots = actionSlots,
-          resultPrimarySlots = primary,
-          resultSecondarySlots = secondary,
-          lamp = nextState.lamp,
-        )
-      return LevelStepResult(
-        newState = nextState,
-        logEntry = logEntry,
-        sound = sound,
-        newlyVisibleWordIds = collectLevelScreenWordIds(levelDef, nextState).toSet(),
-      )
+      return makeResult(levelDef, nextState, trigger, actionSlots, sound, timestampMs, logId)
     }
 
-    // Evaluate condition requirements on button push
     val req = levelDef.requirements ?: ConditionRequirement()
     val mismatch = findFirstMismatch(state, req)
     if (mismatch != null) {
       val nextState =
         state.copy(
           buttonPresses = 0,
+          dualPresses = 0,
           lamp = LampState.RED,
           primaryMessage = mismatch.first,
           secondaryMessage = mismatch.second,
         )
-      val logEntry =
-        OperationLogEntry(
-          id = logId,
-          timestampMs = timestampMs,
-          boardId = state.boardId,
-          levelNumber = state.levelNumber,
-          trigger = trigger,
-          actionLabelSlots = actionSlots,
-          resultPrimarySlots = mismatch.first,
-          resultSecondarySlots = mismatch.second,
-          lamp = LampState.RED,
-        )
-      return LevelStepResult(
-        newState = nextState,
-        logEntry = logEntry,
-        sound = SoundEffect.WARN,
-        newlyVisibleWordIds = collectLevelScreenWordIds(levelDef, nextState).toSet(),
-      )
+      return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.WARN, timestampMs, logId)
     }
 
+    // Hold requirement
+    if (req.requireHold == true) {
+      if (trigger != "button_hold") {
+        val primary = listOf(listOf("n_button"), listOf("v_hold", "m_not"))
+        val secondary = listOf(listOf("n_machine"), listOf("v_stop"))
+        val nextState =
+          state.copy(
+            buttonPresses = 0,
+            dualPresses = 0,
+            lamp = LampState.RED,
+            primaryMessage = primary,
+            secondaryMessage = secondary,
+          )
+        return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.WARN, timestampMs, logId)
+      }
+      val nextState =
+        state.copy(
+          isCleared = true,
+          lamp = LampState.GREEN,
+          primaryMessage = levelDef.completionPrimary,
+          secondaryMessage = levelDef.completionSecondary,
+        )
+      return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.PHASE_CLEAR, timestampMs, logId)
+    }
+
+    // Dual simultaneous press requirement
+    if (req.dualPressesEq != null && req.dualPressesEq > 0) {
+      val nextDual = state.dualPresses + 1
+      if (nextDual < req.dualPressesEq) {
+        val primary = listOf(listOf("n_button", "d_2"), listOf("m_together"), Base5.toDigitWordIds(nextDual) + "m_times")
+        val secondary = listOf(listOf("n_lamp"), listOf("v_activate"))
+        val nextState =
+          state.copy(
+            dualPresses = nextDual,
+            lamp = LampState.AMBER,
+            primaryMessage = primary,
+            secondaryMessage = secondary,
+          )
+        return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.CLICK, timestampMs, logId)
+      }
+      val nextState =
+        state.copy(
+          dualPresses = nextDual,
+          isCleared = true,
+          lamp = LampState.GREEN,
+          primaryMessage = levelDef.completionPrimary,
+          secondaryMessage = levelDef.completionSecondary,
+        )
+      return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.PHASE_CLEAR, timestampMs, logId)
+    }
+
+    // Standard push button requirement
     val targetPresses = (req.buttonPressesEq ?: 1).coerceAtLeast(1)
     val nextPresses = state.buttonPresses + 1
     if (nextPresses < targetPresses) {
@@ -142,24 +168,7 @@ object LevelEngine {
           primaryMessage = primary,
           secondaryMessage = secondary,
         )
-      val logEntry =
-        OperationLogEntry(
-          id = logId,
-          timestampMs = timestampMs,
-          boardId = state.boardId,
-          levelNumber = state.levelNumber,
-          trigger = trigger,
-          actionLabelSlots = actionSlots,
-          resultPrimarySlots = primary,
-          resultSecondarySlots = secondary,
-          lamp = LampState.AMBER,
-        )
-      return LevelStepResult(
-        newState = nextState,
-        logEntry = logEntry,
-        sound = SoundEffect.CLICK,
-        newlyVisibleWordIds = collectLevelScreenWordIds(levelDef, nextState).toSet(),
-      )
+      return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.CLICK, timestampMs, logId)
     }
 
     val nextState =
@@ -170,24 +179,7 @@ object LevelEngine {
         primaryMessage = levelDef.completionPrimary,
         secondaryMessage = levelDef.completionSecondary,
       )
-    val logEntry =
-      OperationLogEntry(
-        id = logId,
-        timestampMs = timestampMs,
-        boardId = state.boardId,
-        levelNumber = state.levelNumber,
-        trigger = trigger,
-        actionLabelSlots = actionSlots,
-        resultPrimarySlots = nextState.primaryMessage,
-        resultSecondarySlots = nextState.secondaryMessage,
-        lamp = LampState.GREEN,
-      )
-    return LevelStepResult(
-      newState = nextState,
-      logEntry = logEntry,
-      sound = SoundEffect.PHASE_CLEAR,
-      newlyVisibleWordIds = collectLevelScreenWordIds(levelDef, nextState).toSet(),
-    )
+    return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.PHASE_CLEAR, timestampMs, logId)
   }
 
   private fun stepSequence(
@@ -204,29 +196,11 @@ object LevelEngine {
       val updated = applyModuleTrigger(state, trigger)
       val (primary, secondary, sound) = moduleReaction(updated, trigger)
       val nextState = updated.copy(primaryMessage = primary, secondaryMessage = secondary)
-      val logEntry =
-        OperationLogEntry(
-          id = logId,
-          timestampMs = timestampMs,
-          boardId = state.boardId,
-          levelNumber = state.levelNumber,
-          trigger = trigger,
-          actionLabelSlots = actionSlots,
-          resultPrimarySlots = primary,
-          resultSecondarySlots = secondary,
-          lamp = nextState.lamp,
-        )
-      return LevelStepResult(
-        newState = nextState,
-        logEntry = logEntry,
-        sound = sound,
-        newlyVisibleWordIds = collectLevelScreenWordIds(levelDef, nextState).toSet(),
-      )
+      return makeResult(levelDef, nextState, trigger, actionSlots, sound, timestampMs, logId)
     }
 
     val expectedStep = steps[state.seqStep]
     if (trigger != expectedStep.trigger) {
-      // Soft reset to step 0 without failure/game over
       val reset = createInitialState(state.boardId, levelDef)
       val primary = expectedStep.hintPrimary
       val secondary = listOf(listOf("n_machine"), listOf("v_stop"), listOf("adj_danger"))
@@ -236,24 +210,7 @@ object LevelEngine {
           primaryMessage = primary,
           secondaryMessage = secondary,
         )
-      val logEntry =
-        OperationLogEntry(
-          id = logId,
-          timestampMs = timestampMs,
-          boardId = state.boardId,
-          levelNumber = state.levelNumber,
-          trigger = trigger,
-          actionLabelSlots = actionSlots,
-          resultPrimarySlots = primary,
-          resultSecondarySlots = secondary,
-          lamp = LampState.RED,
-        )
-      return LevelStepResult(
-        newState = nextState,
-        logEntry = logEntry,
-        sound = SoundEffect.WARN,
-        newlyVisibleWordIds = collectLevelScreenWordIds(levelDef, nextState).toSet(),
-      )
+      return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.WARN, timestampMs, logId)
     }
 
     val updatedHardware = applyModuleTrigger(state, trigger)
@@ -267,24 +224,7 @@ object LevelEngine {
           primaryMessage = primary,
           secondaryMessage = emptyList(),
         )
-      val logEntry =
-        OperationLogEntry(
-          id = logId,
-          timestampMs = timestampMs,
-          boardId = state.boardId,
-          levelNumber = state.levelNumber,
-          trigger = trigger,
-          actionLabelSlots = actionSlots,
-          resultPrimarySlots = primary,
-          resultSecondarySlots = emptyList(),
-          lamp = LampState.AMBER,
-        )
-      return LevelStepResult(
-        newState = nextState,
-        logEntry = logEntry,
-        sound = SoundEffect.RATCHET,
-        newlyVisibleWordIds = collectLevelScreenWordIds(levelDef, nextState).toSet(),
-      )
+      return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.RATCHET, timestampMs, logId)
     }
 
     val nextStepIndex = state.seqStep + 1
@@ -298,24 +238,7 @@ object LevelEngine {
           primaryMessage = levelDef.completionPrimary,
           secondaryMessage = levelDef.completionSecondary,
         )
-      val logEntry =
-        OperationLogEntry(
-          id = logId,
-          timestampMs = timestampMs,
-          boardId = state.boardId,
-          levelNumber = state.levelNumber,
-          trigger = trigger,
-          actionLabelSlots = actionSlots,
-          resultPrimarySlots = nextState.primaryMessage,
-          resultSecondarySlots = nextState.secondaryMessage,
-          lamp = LampState.GREEN,
-        )
-      return LevelStepResult(
-        newState = nextState,
-        logEntry = logEntry,
-        sound = SoundEffect.PHASE_CLEAR,
-        newlyVisibleWordIds = collectLevelScreenWordIds(levelDef, nextState).toSet(),
-      )
+      return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.PHASE_CLEAR, timestampMs, logId)
     }
 
     val stepCompleteSecondary =
@@ -328,22 +251,34 @@ object LevelEngine {
         primaryMessage = actionSlots,
         secondaryMessage = stepCompleteSecondary,
       )
+    return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.CHIME, timestampMs, logId)
+  }
+
+  private fun makeResult(
+    levelDef: LevelDef,
+    nextState: LevelRuntimeState,
+    trigger: String,
+    actionSlots: List<List<String>>,
+    sound: SoundEffect,
+    timestampMs: Long,
+    logId: Long,
+  ): LevelStepResult {
     val logEntry =
       OperationLogEntry(
         id = logId,
         timestampMs = timestampMs,
-        boardId = state.boardId,
-        levelNumber = state.levelNumber,
+        boardId = nextState.boardId,
+        levelNumber = nextState.levelNumber,
         trigger = trigger,
         actionLabelSlots = actionSlots,
-        resultPrimarySlots = actionSlots,
-        resultSecondarySlots = stepCompleteSecondary,
-        lamp = LampState.AMBER,
+        resultPrimarySlots = nextState.primaryMessage,
+        resultSecondarySlots = nextState.secondaryMessage,
+        lamp = nextState.lamp,
       )
     return LevelStepResult(
       newState = nextState,
       logEntry = logEntry,
-      sound = SoundEffect.CHIME,
+      sound = sound,
       newlyVisibleWordIds = collectLevelScreenWordIds(levelDef, nextState).toSet(),
     )
   }
@@ -358,6 +293,11 @@ object LevelEngine {
       "conduit_cut" -> state.copy(conduit = "cut")
       "lock_lock" -> state.copy(lock = "locked")
       "lock_unlock" -> state.copy(lock = "unlocked")
+      "sw_a_toggle" -> state.copy(swA = !state.swA)
+      "sw_b_toggle" -> state.copy(swB = !state.swB)
+      "sw_c_toggle" -> state.copy(swC = !state.swC)
+      "slider_right" -> state.copy(slider = "right")
+      "slider_left" -> state.copy(slider = "left")
       "dial_inc" -> state.copy(dial = (state.dial + 1).coerceAtMost(MAX_NUMERIC_VALUE))
       "dial_dec" -> state.copy(dial = (state.dial - 1).coerceAtLeast(0))
       "dial_inc5" -> state.copy(dial = (state.dial + 5).coerceAtMost(MAX_NUMERIC_VALUE))
@@ -383,6 +323,28 @@ object LevelEngine {
       "lock_lock" -> Triple(listOf(listOf("n_lock"), listOf("v_lock")), emptyList(), SoundEffect.CLUNK)
       "lock_unlock" ->
         Triple(listOf(listOf("n_lock"), listOf("v_unlock")), emptyList(), SoundEffect.CHIME)
+      "sw_a_toggle" ->
+        Triple(
+          listOf(listOf("n_switch", "d_1"), listOf(if (updated.swA) "v_activate" else "v_stop")),
+          emptyList(),
+          SoundEffect.CLICK,
+        )
+      "sw_b_toggle" ->
+        Triple(
+          listOf(listOf("n_switch", "d_2"), listOf(if (updated.swB) "v_activate" else "v_stop")),
+          emptyList(),
+          SoundEffect.CLICK,
+        )
+      "sw_c_toggle" ->
+        Triple(
+          listOf(listOf("n_switch", "d_3"), listOf(if (updated.swC) "v_activate" else "v_stop")),
+          emptyList(),
+          SoundEffect.CLICK,
+        )
+      "slider_right" ->
+        Triple(listOf(listOf("n_slider"), listOf("v_right")), emptyList(), SoundEffect.RATCHET)
+      "slider_left" ->
+        Triple(listOf(listOf("n_slider"), listOf("v_left")), emptyList(), SoundEffect.RATCHET)
       "dial_inc",
       "dial_dec",
       "dial_inc5" ->
@@ -407,6 +369,25 @@ object LevelEngine {
     state: LevelRuntimeState,
     req: ConditionRequirement,
   ): Pair<List<List<String>>, List<List<String>>>? {
+    req.logicClauses.forEach { clause ->
+      if (!evaluateLogicClause(state, clause)) {
+        val p = clause.hintPrimary.ifEmpty { listOf(listOf("n_switch"), listOf("v_match", "m_not")) }
+        val s = clause.hintSecondary.ifEmpty { listOf(listOf("n_machine"), listOf("v_stop")) }
+        return p to s
+      }
+    }
+    if (req.swAEq != null && state.swA != req.swAEq) {
+      return listOf(listOf("n_switch", "d_1"), listOf(if (req.swAEq) "v_activate" else "v_stop", "m_not")) to
+        listOf(listOf("n_machine"), listOf("v_stop"))
+    }
+    if (req.swBEq != null && state.swB != req.swBEq) {
+      return listOf(listOf("n_switch", "d_2"), listOf(if (req.swBEq) "v_activate" else "v_stop", "m_not")) to
+        listOf(listOf("n_machine"), listOf("v_stop"))
+    }
+    if (req.swCEq != null && state.swC != req.swCEq) {
+      return listOf(listOf("n_switch", "d_3"), listOf(if (req.swCEq) "v_activate" else "v_stop", "m_not")) to
+        listOf(listOf("n_machine"), listOf("v_stop"))
+    }
     if (req.conduitEq != null && state.conduit != req.conduitEq) {
       val verb = if (req.conduitEq == "connected") "v_connect" else "v_cut"
       return listOf(listOf("n_conduit"), listOf(verb, "m_not")) to
@@ -420,6 +401,11 @@ object LevelEngine {
     if (req.keyEq != null && state.key != req.keyEq) {
       val verb = if (req.keyEq == "in") "v_insert" else "v_remove"
       return listOf(listOf("n_key"), listOf(verb, "m_not")) to
+        listOf(listOf("n_machine"), listOf("v_stop"))
+    }
+    if (req.sliderEq != null && state.slider != req.sliderEq) {
+      val dir = if (req.sliderEq == "right") "v_right" else "v_left"
+      return listOf(listOf("n_slider"), listOf(dir, "m_not")) to
         listOf(listOf("n_machine"), listOf("v_stop"))
     }
     if (req.dialEq != null && state.dial != req.dialEq) {
@@ -440,9 +426,37 @@ object LevelEngine {
     return null
   }
 
+  private fun evaluateLogicClause(state: LevelRuntimeState, clause: LogicClause): Boolean {
+    if (clause.checks.isEmpty()) return true
+    return when (clause.operator.uppercase()) {
+      "OR" -> clause.checks.any { moduleMatches(state, it) }
+      "XOR" -> clause.checks.count { moduleMatches(state, it) } % 2 == 1
+      "NOT" -> clause.checks.none { moduleMatches(state, it) }
+      else -> clause.checks.all { moduleMatches(state, it) }
+    }
+  }
+
+  private fun moduleMatches(state: LevelRuntimeState, check: ModuleCheck): Boolean {
+    val actual =
+      when (check.module) {
+        "sw_a" -> state.swA.toString()
+        "sw_b" -> state.swB.toString()
+        "sw_c" -> state.swC.toString()
+        "lever" -> state.lever
+        "key" -> state.key
+        "conduit" -> state.conduit
+        "lock" -> state.lock
+        "slider" -> state.slider
+        else -> ""
+      }
+    return actual == check.expected
+  }
+
   fun triggerToSlots(trigger: String): List<List<String>> =
     when (trigger) {
       "button_push" -> listOf(listOf("n_button"), listOf("v_push"))
+      "button_hold" -> listOf(listOf("n_button"), listOf("v_hold"))
+      "dual_push" -> listOf(listOf("n_button", "d_2"), listOf("m_together"), listOf("v_push"))
       "lever_pull" -> listOf(listOf("n_lever"), listOf("v_pull"))
       "lever_push" -> listOf(listOf("n_lever"), listOf("v_push"))
       "key_insert" -> listOf(listOf("n_key"), listOf("v_insert"))
@@ -451,6 +465,11 @@ object LevelEngine {
       "conduit_cut" -> listOf(listOf("n_conduit"), listOf("v_cut"))
       "lock_lock" -> listOf(listOf("n_lock"), listOf("v_lock"))
       "lock_unlock" -> listOf(listOf("n_lock"), listOf("v_unlock"))
+      "sw_a_toggle" -> listOf(listOf("n_switch", "d_1"))
+      "sw_b_toggle" -> listOf(listOf("n_switch", "d_2"))
+      "sw_c_toggle" -> listOf(listOf("n_switch", "d_3"))
+      "slider_right" -> listOf(listOf("n_slider"), listOf("v_right"))
+      "slider_left" -> listOf(listOf("n_slider"), listOf("v_left"))
       "dial_inc", "dial_inc5" -> listOf(listOf("n_dial"), listOf("v_increase"))
       "dial_dec" -> listOf(listOf("n_dial"), listOf("v_decrease"))
       "valve_inc", "valve_inc5" -> listOf(listOf("n_valve"), listOf("v_increase"))
@@ -473,11 +492,23 @@ object LevelEngine {
     addSlots(state.primaryMessage)
     addSlots(state.secondaryMessage)
     levelDef.plates.forEach { addSlots(it) }
+    if (state.isCleared) {
+      ids.add("m_next")
+    }
 
     levelDef.unlockedControls.forEach { control ->
       when (control) {
         "button" -> {
           ids.add("n_button")
+          ids.add("v_push")
+        }
+        "hold_button" -> {
+          ids.add("n_button")
+          ids.add("v_hold")
+        }
+        "dual_button" -> {
+          ids.add("n_button")
+          ids.add("d_2")
           ids.add("v_push")
         }
         "lever" -> {
@@ -495,6 +526,26 @@ object LevelEngine {
         "lock" -> {
           ids.add("n_lock")
           ids.add(if (state.lock == "locked") "v_lock" else "v_unlock")
+        }
+        "sw_a" -> {
+          ids.add("n_switch")
+          ids.add("d_1")
+          ids.add(if (state.swA) "v_activate" else "v_stop")
+        }
+        "sw_b" -> {
+          ids.add("n_switch")
+          ids.add("d_2")
+          ids.add(if (state.swB) "v_activate" else "v_stop")
+        }
+        "sw_c" -> {
+          ids.add("n_switch")
+          ids.add("d_3")
+          ids.add(if (state.swC) "v_activate" else "v_stop")
+        }
+        "slider" -> {
+          ids.add("n_slider")
+          ids.add("v_swipe")
+          ids.add(if (state.slider == "right") "v_right" else "v_left")
         }
         "dial" -> {
           ids.add("n_dial")
@@ -516,6 +567,7 @@ object LevelEngine {
     for (n in 1..boardDef.totalSlots) {
       ids.addAll(Base5.toDigitWordIds(n))
     }
+    ids.add("adj_complete")
     return ids.toList()
   }
 
