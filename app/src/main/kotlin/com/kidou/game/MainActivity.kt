@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
       KIDOUTheme(
         themeMode = uiState.themeMode,
         colorTheme = uiState.colorTheme,
+        hapticsEnabled = uiState.hapticsEnabled,
       ) {
         val bgArgb = KidouTheme.palette.background.toArgb()
         LaunchedEffect(uiState.themeMode, bgArgb) {
@@ -120,6 +121,7 @@ private fun KidouAppRoot(
         onBackToBoard = { viewModel.backToBoard() },
         onOpenNextLevel = { bId, lNum -> viewModel.openLevel(bId, lNum) },
         onTrigger = { viewModel.triggerControl(it) },
+        onTickTicker = { viewModel.tickActiveLevelTicker() },
         onWordClick = { viewModel.openWordEditor(it) },
         onOpenDictionary = { viewModel.openDictionary(DictionaryTab.SCREEN) },
         onOpenMenu = { viewModel.openMenu() },
@@ -158,6 +160,7 @@ private fun KidouAppRoot(
       onSelectTab = { viewModel.setMenuTab(it) },
       onToggleBgm = { viewModel.setBgmEnabled(it) },
       onToggleSound = { viewModel.setSoundEnabled(it) },
+      onToggleHaptics = { viewModel.setHapticsEnabled(it) },
       onSelectLanguage = { viewModel.setLanguage(it) },
       onSelectThemeMode = { viewModel.setThemeMode(it) },
       onSelectColorTheme = { viewModel.setColorTheme(it) },
@@ -165,6 +168,8 @@ private fun KidouAppRoot(
       onDebugResetTranslations = { viewModel.debugResetTranslations() },
       onDebugFill19ClearsBoard1 = { viewModel.debugFill19ClearsForBoard1() },
       onDebugFill19ClearsBoard2 = { viewModel.debugFill19ClearsForBoard2() },
+      onDebugFill19ClearsBoard3 = { viewModel.debugFill19ClearsForBoard3() },
+      onDebugFill19ClearsBoard4 = { viewModel.debugFill19ClearsForBoard4() },
       onResetAll = { viewModel.resetAll() },
       onDismiss = { viewModel.closeMenu() },
     )

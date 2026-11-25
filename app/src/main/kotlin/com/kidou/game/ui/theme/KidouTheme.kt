@@ -10,9 +10,11 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.kidou.game.R
 import com.kidou.game.model.AppLanguage
 import com.kidou.game.model.WordColorTag
 
@@ -22,10 +24,10 @@ enum class ThemeMode {
 }
 
 enum class ColorTheme(val labelJa: String, val labelEn: String, val swatchHex: Long) {
-  AMBER_RUIN("琥珀遺跡", "Amber Ruin", 0xFFF2B84B),
-  EMERALD_CRT("翠走査線", "Emerald CRT", 0xFF5EEB8F),
-  COBALT_SIGNAL("蒼信号", "Cobalt Signal", 0xFF60A5FA),
-  CRIMSON_FORGE("紅鍛冶", "Crimson Forge", 0xFFF87171);
+  AMBER_RUIN("デフォルト", "Default", 0xFFF2B84B),
+  EMERALD_CRT("グリーン", "Green", 0xFF5EEB8F),
+  COBALT_SIGNAL("ブルー", "Blue", 0xFF60A5FA),
+  CRIMSON_FORGE("レッド", "Red", 0xFFF87171);
 
   fun label(language: AppLanguage): String =
     when (language) {
@@ -154,62 +156,88 @@ fun buildKidouPalette(themeMode: ThemeMode, colorTheme: ColorTheme): KidouPalett
 private val DefaultPalette = buildKidouPalette(ThemeMode.DARK, ColorTheme.AMBER_RUIN)
 
 val LocalKidouPalette = staticCompositionLocalOf { DefaultPalette }
+val LocalKidouHapticsEnabled = staticCompositionLocalOf { true }
+
+val DotGothic16FontFamily: FontFamily by lazy {
+  FontFamily(Font(R.font.dotgothic16_regular, FontWeight.Normal))
+}
 
 object KidouTheme {
   val palette: KidouPalette
     @Composable get() = LocalKidouPalette.current
 }
 
-private val KidouTypography =
+private val KidouTypography by lazy {
   Typography(
+    displayLarge = TextStyle(fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal),
+    displayMedium = TextStyle(fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal),
+    displaySmall = TextStyle(fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal),
+    headlineLarge = TextStyle(fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal),
+    headlineMedium = TextStyle(fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal),
+    headlineSmall = TextStyle(fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal),
     titleLarge =
       TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
+        fontFamily = DotGothic16FontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 19.sp,
         letterSpacing = 0.8.sp,
       ),
     titleMedium =
       TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 15.sp,
+        fontFamily = DotGothic16FontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
         letterSpacing = 0.5.sp,
+      ),
+    titleSmall =
+      TextStyle(
+        fontFamily = DotGothic16FontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
       ),
     bodyLarge =
       TextStyle(
-        fontFamily = FontFamily.Monospace,
+        fontFamily = DotGothic16FontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
       ),
     bodyMedium =
       TextStyle(
-        fontFamily = FontFamily.Monospace,
+        fontFamily = DotGothic16FontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 13.sp,
         lineHeight = 18.sp,
       ),
+    bodySmall =
+      TextStyle(
+        fontFamily = DotGothic16FontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+      ),
+    labelLarge = TextStyle(fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal, fontSize = 12.sp),
     labelMedium =
       TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Medium,
+        fontFamily = DotGothic16FontFamily,
+        fontWeight = FontWeight.Normal,
         fontSize = 11.sp,
         letterSpacing = 0.4.sp,
       ),
     labelSmall =
       TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Medium,
+        fontFamily = DotGothic16FontFamily,
+        fontWeight = FontWeight.Normal,
         fontSize = 10.sp,
         letterSpacing = 0.3.sp,
       ),
   )
+}
 
 @Composable
 fun KIDOUTheme(
   themeMode: ThemeMode = ThemeMode.DARK,
   colorTheme: ColorTheme = ColorTheme.AMBER_RUIN,
+  hapticsEnabled: Boolean = true,
   content: @Composable () -> Unit,
 ) {
   val palette = buildKidouPalette(themeMode, colorTheme)
@@ -248,7 +276,10 @@ fun KIDOUTheme(
       )
     }
 
-  CompositionLocalProvider(LocalKidouPalette provides palette) {
+  CompositionLocalProvider(
+    LocalKidouPalette provides palette,
+    LocalKidouHapticsEnabled provides hapticsEnabled,
+  ) {
     MaterialTheme(
       colorScheme = scheme,
       typography = KidouTypography,

@@ -1,9 +1,12 @@
 package com.kidou.game.ui.components
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -12,10 +15,16 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -23,13 +32,28 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouTheme
+import com.kidou.game.ui.theme.LocalKidouHapticsEnabled
+
+val LocalPadPressed = staticCompositionLocalOf { false }
+
+@Composable
+fun rememberKidouHapticClick(): () -> Unit {
+  val enabled = LocalKidouHapticsEnabled.current
+  val view = LocalView.current
+  return {
+    if (enabled) {
+      view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+    }
+  }
+}
 
 @Composable
 fun PixelStonePanel(
@@ -122,28 +146,56 @@ fun PixelActionButton(
   selected: Boolean = false,
 ) {
   val palette = KidouTheme.palette
-  val bg = if (selected) accent.copy(alpha = 0.22f) else palette.tile
-  val border = if (selected) accent else accent.copy(alpha = 0.72f)
+  val hapticClick = rememberKidouHapticClick()
+  val interactionSource = remember { MutableInteractionSource() }
+  val isPressed by interactionSource.collectIsPressedAsState()
+  LaunchedEffect(isPressed) {
+    if (isPressed) hapticClick()
+  }
+
+  val activeAccent = if (accent != palette.muted) accent else palette.glyph
+  val bg =
+    when {
+      isPressed -> activeAccent
+      selected -> accent.copy(alpha = 0.22f)
+      else -> palette.tile
+    }
+  val border = if (isPressed || selected) activeAccent else accent.copy(alpha = 0.72f)
+  val contentColor =
+    when {
+      isPressed -> if (palette.isDark) palette.background else palette.tile
+      selected || accent != palette.muted -> accent
+      else -> palette.glyph
+    }
+
   Box(
     contentAlignment = Alignment.Center,
     modifier =
       modifier
         .heightIn(min = 38.dp)
+        .offset(y = if (isPressed) 2.dp else 0.dp)
         .background(bg, RectangleShape)
         .border(2.dp, border, RectangleShape)
         .drawBehind {
-          drawRect(palette.bevelHighlight, Offset(2f, 2f), Size(size.width - 4f, 3f))
-          drawRect(palette.bevelShadow, Offset(2f, size.height - 5f), Size(size.width - 4f, 3f))
+          val topBevel = if (isPressed) palette.bevelShadow else palette.bevelHighlight
+          val bottomBevel = if (isPressed) palette.bevelHighlight else palette.bevelShadow
+          drawRect(topBevel, Offset(2f, 2f), Size(size.width - 4f, 3f))
+          drawRect(bottomBevel, Offset(2f, size.height - 5f), Size(size.width - 4f, 3f))
         }
-        .clickable(role = Role.Button, onClick = onClick)
+        .clickable(
+          interactionSource = interactionSource,
+          indication = null,
+          role = Role.Button,
+          onClick = onClick,
+        )
         .padding(horizontal = 10.dp, vertical = 7.dp),
   ) {
     Text(
       text = label,
-      color = if (selected || accent != palette.muted) accent else palette.glyph,
-      fontFamily = FontFamily.Monospace,
-      fontWeight = FontWeight.Bold,
-      fontSize = 11.sp,
+      color = contentColor,
+      fontFamily = DotGothic16FontFamily,
+      fontWeight = FontWeight.Normal,
+      fontSize = 12.sp,
       maxLines = 1,
     )
   }
@@ -155,23 +207,50 @@ fun PixelBevelPad(
   borderColor: Color = KidouTheme.palette.borderBright,
   fillColor: Color = KidouTheme.palette.tile,
   contentAlignment: Alignment = Alignment.Center,
+  pressed: Boolean = false,
   onClick: (() -> Unit)? = null,
   content: @Composable BoxScope.() -> Unit,
 ) {
   val palette = KidouTheme.palette
+  val hapticClick = rememberKidouHapticClick()
+  val interactionSource = remember { MutableInteractionSource() }
+  val interactionPressed by interactionSource.collectIsPressedAsState()
+  val isPressed = pressed || interactionPressed
+  LaunchedEffect(isPressed) {
+    if (isPressed) hapticClick()
+  }
+
+  val effectiveFill = if (isPressed) borderColor else fillColor
   Box(
     contentAlignment = contentAlignment,
     modifier =
       modifier
-        .background(fillColor, RectangleShape)
+        .offset(y = if (isPressed) 2.dp else 0.dp)
+        .background(effectiveFill, RectangleShape)
         .border(2.dp, borderColor, RectangleShape)
         .drawBehind {
-          drawRect(palette.bevelHighlight, Offset(0f, 0f), Size(size.width, 4f))
-          drawRect(palette.bevelShadow, Offset(0f, size.height - 4f), Size(size.width, 4f))
+          val topBevel = if (isPressed) palette.bevelShadow else palette.bevelHighlight
+          val bottomBevel = if (isPressed) palette.bevelHighlight else palette.bevelShadow
+          drawRect(topBevel, Offset(0f, 0f), Size(size.width, 4f))
+          drawRect(bottomBevel, Offset(0f, size.height - 4f), Size(size.width, 4f))
         }
-        .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
-    content = content,
-  )
+        .then(
+          if (onClick != null) {
+            Modifier.clickable(
+              interactionSource = interactionSource,
+              indication = null,
+              role = Role.Button,
+              onClick = onClick,
+            )
+          } else {
+            Modifier
+          },
+        ),
+  ) {
+    CompositionLocalProvider(LocalPadPressed provides isPressed) {
+      content()
+    }
+  }
 }
 
 @Composable

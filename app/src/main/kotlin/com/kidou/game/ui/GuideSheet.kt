@@ -11,13 +11,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kidou.game.ui.components.GlyphSentenceRow
 import com.kidou.game.ui.components.PixelCrtDisplay
 import com.kidou.game.ui.i18n.stringsFor
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouTheme
 import com.kidou.game.viewmodel.GameUiState
 
@@ -46,9 +46,9 @@ fun GuideSheet(
     ) {
       Text(
         text = strings.guideTitle,
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 17.sp,
+        fontFamily = DotGothic16FontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 18.sp,
         color = palette.statusSuccess,
       )
 
@@ -68,7 +68,8 @@ fun GuideSheet(
       Text(
         text = strings.guideNote,
         color = palette.muted,
-        fontFamily = FontFamily.Monospace,
+        fontFamily = DotGothic16FontFamily,
+        fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
       )
     }

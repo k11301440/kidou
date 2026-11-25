@@ -3,6 +3,8 @@ package com.kidou.game.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -19,13 +22,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kidou.game.engine.Base5
@@ -36,7 +42,9 @@ import com.kidou.game.ui.components.PixelActionButton
 import com.kidou.game.ui.components.PixelGlyph
 import com.kidou.game.ui.components.PixelLed
 import com.kidou.game.ui.components.PixelStonePanel
+import com.kidou.game.ui.components.rememberKidouHapticClick
 import com.kidou.game.ui.i18n.stringsFor
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouTheme
 import com.kidou.game.viewmodel.GameUiState
 
@@ -54,6 +62,7 @@ fun BoardScreen(
   val data = uiState.gameData ?: return
   val palette = KidouTheme.palette
   val strings = stringsFor(uiState.language)
+  val hapticClick = rememberKidouHapticClick()
   val currentBoard = data.boardCollection.boardById(uiState.selectedBoardId)
 
   Column(
@@ -97,59 +106,89 @@ fun BoardScreen(
       )
     }
 
-    // Board Selector Bar (Board 1 / Board 2 / Board 3)
+    // Board Selector Bar (Boards 1..5)
     Row(
       modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
       data.boardCollection.boards.forEach { board ->
         val unlocked = LevelEngine.isBoardUnlocked(board, uiState.clearedLevelKeys)
         val selected = board.id == uiState.selectedBoardId
+        val digits = Base5.toDigitWordIds(board.id)
+        val interactionSource = remember(board.id) { MutableInteractionSource() }
+        val isPressed by interactionSource.collectIsPressedAsState()
+        LaunchedEffect(isPressed) {
+          if (isPressed && unlocked) hapticClick()
+        }
+        val invertedFg = if (palette.isDark) palette.background else palette.tile
         val borderColor =
           when {
+            isPressed && unlocked -> palette.accentPrimary
             selected -> palette.accentPrimary
             unlocked -> palette.borderBright
             else -> palette.border.copy(alpha = 0.5f)
           }
         val bgColor =
           when {
+            isPressed && unlocked -> palette.accentPrimary
             selected -> palette.accentPrimary.copy(alpha = 0.16f)
             unlocked -> palette.panel
             else -> palette.background
           }
+        val glyphSize = if (digits.size > 1) 11.dp else 13.dp
         Row(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.Center,
           modifier =
             Modifier
               .weight(1f)
+              .offset(y = if (isPressed && unlocked) 2.dp else 0.dp)
               .background(bgColor, RectangleShape)
               .border(2.dp, borderColor, RectangleShape)
               .semantics { contentDescription = "board_tab_${board.id}" }
-              .then(if (unlocked) Modifier.clickable { onSelectBoard(board.id) } else Modifier)
-              .padding(vertical = 8.dp, horizontal = 6.dp),
+              .then(
+                if (unlocked) {
+                  Modifier.clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = { onSelectBoard(board.id) },
+                  )
+                } else {
+                  Modifier
+                },
+              )
+              .padding(vertical = 8.dp, horizontal = 3.dp),
         ) {
           PixelGlyph(
             grid = data.glyphs["n_board"],
-            size = 15.dp,
-            color = if (unlocked) palette.glyph else palette.muted.copy(alpha = 0.4f),
+            size = 13.dp,
+            color =
+              when {
+                isPressed && unlocked -> invertedFg
+                unlocked -> palette.glyph
+                else -> palette.muted.copy(alpha = 0.4f)
+              },
           )
-          Spacer(modifier = Modifier.size(5.dp))
-          Base5.toDigitWordIds(board.id).forEach { dId ->
+          Spacer(modifier = Modifier.size(3.dp))
+          digits.forEach { dId ->
             PixelGlyph(
               grid = data.glyphs[dId],
-              size = 15.dp,
+              size = glyphSize,
               color =
-                if (selected) palette.accentPrimary
-                else if (unlocked) palette.glyph
-                else palette.muted.copy(alpha = 0.4f),
+                when {
+                  isPressed && unlocked -> invertedFg
+                  selected -> palette.accentPrimary
+                  unlocked -> palette.glyph
+                  else -> palette.muted.copy(alpha = 0.4f)
+                },
             )
           }
           if (!unlocked) {
-            Spacer(modifier = Modifier.size(5.dp))
+            Spacer(modifier = Modifier.size(2.dp))
             PixelGlyph(
               grid = data.glyphs["n_lock"],
-              size = 13.dp,
+              size = 11.dp,
               color = palette.muted.copy(alpha = 0.45f),
             )
           }
@@ -157,7 +196,7 @@ fun BoardScreen(
       }
     }
 
-    // Board Chassis with Base-5 Title & 5x5 Matrix
+    // Board Chassis with Base-5 Title & 5x5 Matrix (§2: removed Japanese header label)
     PixelStonePanel(
       modifier = Modifier.fillMaxWidth().weight(1f),
     ) {
@@ -165,27 +204,15 @@ fun BoardScreen(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          GlyphSentenceRow(
-            slots = currentBoard.titleSlots,
-            glyphs = data.glyphs,
-            words = data.words,
-            dictionary = uiState.dictionary,
-            language = uiState.language,
-            onWordClick = onWordClick,
-            compact = true,
-          )
-          Text(
-            text = strings.boardTitle,
-            color = palette.muted,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 11.sp,
-          )
-        }
+        GlyphSentenceRow(
+          slots = currentBoard.titleSlots,
+          glyphs = data.glyphs,
+          words = data.words,
+          dictionary = uiState.dictionary,
+          language = uiState.language,
+          onWordClick = onWordClick,
+          compact = true,
+        )
 
         BoardProgressPipBar(
           clearedCount = LevelEngine.countBoardClears(currentBoard.id, uiState.clearedLevelKeys),
@@ -228,14 +255,16 @@ fun BoardScreen(
           Text(
             text = strings.levelLockedWip,
             color = palette.muted,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = DotGothic16FontFamily,
+            fontWeight = FontWeight.Normal,
             fontSize = 11.sp,
           )
         } else if (nextBoard != null && !LevelEngine.isBoardUnlocked(nextBoard, uiState.clearedLevelKeys)) {
           Text(
             text = strings.boardLockedHint(currentBoard.id),
             color = palette.muted,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = DotGothic16FontFamily,
+            fontWeight = FontWeight.Normal,
             fontSize = 11.sp,
           )
         }
@@ -292,22 +321,34 @@ private fun BoardLevelCell(
   modifier: Modifier = Modifier,
 ) {
   val palette = KidouTheme.palette
+  val hapticClick = rememberKidouHapticClick()
+  val interactionSource = remember(boardId, levelNumber) { MutableInteractionSource() }
+  val isPressed by interactionSource.collectIsPressedAsState()
+  LaunchedEffect(isPressed) {
+    if (isPressed && available) hapticClick()
+  }
+
   val digits = Base5.toDigitWordIds(levelNumber)
+  val invertedFg = if (palette.isDark) palette.background else palette.tile
+  val activeAccent = if (isCleared) palette.statusSuccess else palette.accentPrimary
   val borderColor =
     when {
       !available -> palette.border.copy(alpha = 0.35f)
+      isPressed -> activeAccent
       isCleared -> palette.statusSuccess
       else -> palette.borderBright
     }
   val bgColor =
     when {
       !available -> palette.background
+      isPressed -> activeAccent
       isCleared -> palette.statusSuccess.copy(alpha = 0.14f)
       else -> palette.tile
     }
   val glyphColor =
     when {
       !available -> palette.muted.copy(alpha = 0.25f)
+      isPressed -> invertedFg
       isCleared -> palette.statusSuccess
       else -> palette.glyph
     }
@@ -322,20 +363,33 @@ private fun BoardLevelCell(
     modifier =
       modifier
         .aspectRatio(1f)
+        .offset(y = if (isPressed && available) 2.dp else 0.dp)
         .background(bgColor, RectangleShape)
-        .border(if (isCleared) 2.dp else 1.5.dp, borderColor, RectangleShape)
+        .border(if (isCleared || isPressed) 2.dp else 1.5.dp, borderColor, RectangleShape)
         .semantics {
           contentDescription =
             if (isCleared) "board_${boardId}_level_${levelNumber}_cleared"
             else "board_${boardId}_level_$levelNumber"
         }
-        .then(if (available) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+        .then(
+          if (available) {
+            Modifier.clickable(
+              interactionSource = interactionSource,
+              indication = null,
+              role = Role.Button,
+              onClick = onClick,
+            )
+          } else {
+            Modifier
+          },
+        )
         .padding(4.dp),
   ) {
     PixelLed(
       color =
         when {
           !available -> palette.background
+          isPressed -> invertedFg
           isCleared -> palette.statusSuccess
           else -> palette.accentPrimary.copy(alpha = 0.45f)
         },
@@ -343,12 +397,11 @@ private fun BoardLevelCell(
       modifier = Modifier.align(Alignment.TopEnd),
     )
 
-    // §6: Replace number glyph with cleared glyph (adj_complete) once cleared
     if (isCleared) {
       PixelGlyph(
         grid = glyphs["adj_complete"],
         size = 24.dp,
-        color = palette.statusSuccess,
+        color = if (isPressed) invertedFg else palette.statusSuccess,
         modifier = Modifier.align(Alignment.Center),
       )
     } else {

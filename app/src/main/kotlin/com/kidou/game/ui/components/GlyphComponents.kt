@@ -4,6 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,11 +13,15 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -25,7 +31,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,6 +42,7 @@ import com.kidou.game.model.DictionaryEntry
 import com.kidou.game.model.GlyphGrid
 import com.kidou.game.model.WordColorTag
 import com.kidou.game.model.WordDef
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouTheme
 import kotlin.math.floor
 
@@ -82,16 +88,28 @@ fun GlyphWordTile(
   glyphColor: Color = KidouTheme.palette.glyph,
 ) {
   val palette = KidouTheme.palette
+  val hapticClick = rememberKidouHapticClick()
+  val interactionSource = remember { MutableInteractionSource() }
+  val isPressed by interactionSource.collectIsPressedAsState()
+  LaunchedEffect(isPressed) {
+    if (isPressed) hapticClick()
+  }
+
   val translation = entry?.resolvedTranslation(wordDef, language)?.trim().orEmpty()
   val colorTag = entry?.colorTag ?: WordColorTag.UNCLASSIFIED
   val tagColor = palette.tagColor(colorTag)
   val hasTag = colorTag != WordColorTag.UNCLASSIFIED
   val borderColor =
     when {
+      isPressed -> palette.accentPrimary
       hasTag -> tagColor.copy(alpha = 0.78f)
       translation.isNotEmpty() -> palette.borderBright
       else -> palette.border
     }
+
+  val bgColor = if (isPressed) palette.accentPrimary else palette.tile
+  val invertedFg = if (palette.isDark) palette.background else palette.tile
+  val effectiveGlyphColor = if (isPressed) invertedFg else glyphColor
 
   val glyphSize = if (compact) 22.dp else 30.dp
   val hPad = if (compact) 6.dp else 8.dp
@@ -104,10 +122,16 @@ fun GlyphWordTile(
     modifier =
       modifier
         .widthIn(min = if (compact) 34.dp else 44.dp, max = 104.dp)
-        .background(palette.tile, RectangleShape)
+        .offset(y = if (isPressed) 1.dp else 0.dp)
+        .background(bgColor, RectangleShape)
         .border(1.dp, borderColor, RectangleShape)
         .semantics { contentDescription = desc }
-        .clickable(role = Role.Button, onClick = onClick)
+        .clickable(
+          interactionSource = interactionSource,
+          indication = null,
+          role = Role.Button,
+          onClick = onClick,
+        )
         .padding(horizontal = hPad, vertical = vPad),
   ) {
     Box(
@@ -117,10 +141,15 @@ fun GlyphWordTile(
       if (translation.isNotEmpty()) {
         Text(
           text = translation,
-          color = if (hasTag) tagColor else palette.glyph,
-          fontFamily = FontFamily.Monospace,
+          color =
+            when {
+              isPressed -> invertedFg
+              hasTag -> tagColor
+              else -> palette.glyph
+            },
+          fontFamily = DotGothic16FontFamily,
           fontSize = if (compact) 9.sp else 10.sp,
-          fontWeight = FontWeight.Medium,
+          fontWeight = FontWeight.Normal,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis,
           textAlign = TextAlign.Center,
@@ -128,8 +157,13 @@ fun GlyphWordTile(
       } else {
         Text(
           text = "··",
-          color = if (hasTag) tagColor.copy(alpha = 0.8f) else palette.muted.copy(alpha = 0.45f),
-          fontFamily = FontFamily.Monospace,
+          color =
+            when {
+              isPressed -> invertedFg
+              hasTag -> tagColor.copy(alpha = 0.8f)
+              else -> palette.muted.copy(alpha = 0.45f)
+            },
+          fontFamily = DotGothic16FontFamily,
           fontSize = 9.sp,
           textAlign = TextAlign.Center,
         )
@@ -138,7 +172,7 @@ fun GlyphWordTile(
     PixelGlyph(
       grid = grid,
       size = glyphSize,
-      color = glyphColor,
+      color = effectiveGlyphColor,
       modifier = Modifier.padding(top = 2.dp),
     )
   }
@@ -156,10 +190,19 @@ fun EmbeddedGlyphWithRuby(
   glyphSize: Dp = 20.dp,
 ) {
   val palette = KidouTheme.palette
+  val isPadPressed = LocalPadPressed.current
   val translation = entry?.resolvedTranslation(wordDef, language)?.trim().orEmpty()
   val colorTag = entry?.colorTag ?: WordColorTag.UNCLASSIFIED
   val tagColor = palette.tagColor(colorTag)
   val hasTag = colorTag != WordColorTag.UNCLASSIFIED
+  val invertedFg = if (palette.isDark) palette.background else palette.tile
+  val effectiveGlyphColor = if (isPadPressed) invertedFg else glyphColor
+  val effectiveRubyColor =
+    when {
+      isPadPressed -> invertedFg
+      hasTag -> tagColor
+      else -> glyphColor
+    }
 
   Column(
     horizontalAlignment = Alignment.CenterHorizontally,
@@ -168,10 +211,10 @@ fun EmbeddedGlyphWithRuby(
     if (translation.isNotEmpty()) {
       Text(
         text = translation,
-        color = if (hasTag) tagColor else glyphColor,
-        fontFamily = FontFamily.Monospace,
+        color = effectiveRubyColor,
+        fontFamily = DotGothic16FontFamily,
         fontSize = 9.sp,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.Normal,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
       )
@@ -179,7 +222,7 @@ fun EmbeddedGlyphWithRuby(
     PixelGlyph(
       grid = grid,
       size = glyphSize,
-      color = glyphColor,
+      color = effectiveGlyphColor,
     )
   }
 }

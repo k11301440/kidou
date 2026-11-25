@@ -1,7 +1,10 @@
 package com.kidou.game.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,14 +13,20 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidou.game.engine.Base5
 import com.kidou.game.ui.components.GlyphSentenceRow
 import com.kidou.game.ui.components.PixelCrtDisplay
+import com.kidou.game.ui.components.PixelGlyph
 import com.kidou.game.ui.i18n.stringsFor
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouTheme
 import com.kidou.game.viewmodel.GameUiState
 
@@ -45,13 +54,35 @@ fun StorySheet(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp).padding(bottom = 24.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Text(
-        text = "${strings.storyTitle} (${strings.boardPrefix} ${boardDef.id})",
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 17.sp,
-        color = palette.accentSecondary,
-      )
+      // §2: Show board number using glyphs instead of "(BOARD X)" ASCII text
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          text = strings.storyTitle,
+          fontFamily = DotGothic16FontFamily,
+          fontWeight = FontWeight.Normal,
+          fontSize = 18.sp,
+          color = palette.accentSecondary,
+        )
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(4.dp),
+          modifier =
+            Modifier
+              .background(palette.tile, RectangleShape)
+              .border(1.5.dp, palette.accentSecondary.copy(alpha = 0.7f), RectangleShape)
+              .semantics { contentDescription = "story_board_glyph_${boardDef.id}" }
+              .padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+          PixelGlyph(grid = data.glyphs["n_board"], size = 16.dp, color = palette.glyph)
+          Base5.toDigitWordIds(boardDef.id).forEach { dId ->
+            PixelGlyph(grid = data.glyphs[dId], size = 16.dp, color = palette.accentSecondary)
+          }
+        }
+      }
 
       PixelCrtDisplay(borderColor = palette.accentSecondary.copy(alpha = 0.7f)) {
         boardDef.storyLines.forEach { lineSlots ->
@@ -66,12 +97,16 @@ fun StorySheet(
         }
       }
 
-      Text(
-        text = if (boardDef.id == 1) strings.storyDefaultNote else strings.storyUnregisteredNote,
-        color = palette.muted,
-        fontFamily = FontFamily.Monospace,
-        fontSize = 12.sp,
-      )
+      // §2: Remove storyUnregisteredNote ("辞書が育つほど…"); only keep starter note on Board 1
+      if (boardDef.id == 1) {
+        Text(
+          text = strings.storyDefaultNote,
+          color = palette.muted,
+          fontFamily = DotGothic16FontFamily,
+          fontWeight = FontWeight.Normal,
+          fontSize = 12.sp,
+        )
+      }
     }
   }
 }

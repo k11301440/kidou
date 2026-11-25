@@ -1,7 +1,6 @@
 package com.kidou.game
 
 import com.kidou.game.config.AppConfig
-import com.kidou.game.engine.Base5
 import com.kidou.game.engine.GameDataLoader
 import com.kidou.game.engine.LevelEngine
 import com.kidou.game.model.AppLanguage
@@ -16,16 +15,18 @@ import com.kidou.game.model.ModuleCheck
 import com.kidou.game.model.PuzzleType
 import com.kidou.game.model.SoundEffect
 import com.kidou.game.model.WordColorTag
+import com.kidou.game.ui.i18n.stringsFor
 import com.kidou.game.ui.theme.ColorTheme
 import com.kidou.game.ui.theme.ThemeMode
 import com.kidou.game.ui.theme.buildKidouPalette
 import java.io.File
+import java.util.ArrayDeque
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class KidouV3Test {
+class KidouV4Test {
 
   private fun loadAssets(): LoadedGameData {
     val candidates = listOf(File("src/main/assets"), File("app/src/main/assets"))
@@ -43,10 +44,10 @@ class KidouV3Test {
   }
 
   @Test
-  fun glyphsWordsAndBoardsSchemaAreValidForV3() {
+  fun glyphsWordsAndBoardsSchemaAreValidForV4() {
     val data = loadAssets()
-    assertTrue("Expected at least 58 glyphs, got ${data.glyphs.size}", data.glyphs.size >= 58)
-    assertTrue("Expected at least 58 words, got ${data.words.size}", data.words.size >= 58)
+    assertTrue("Expected at least 66 glyphs, got ${data.glyphs.size}", data.glyphs.size >= 66)
+    assertTrue("Expected at least 66 words, got ${data.words.size}", data.words.size >= 66)
 
     data.glyphs.forEach { (id, grid) ->
       assertEquals("Glyph $id must have 12 rows", 12, grid.rows.size)
@@ -77,18 +78,28 @@ class KidouV3Test {
     }
 
     data.boardCollection.guideLines.forEachIndexed { idx, line -> checkSlots(line, "guideLines[$idx]") }
-    assertEquals(3, data.boardCollection.boards.size)
+    assertEquals(5, data.boardCollection.boards.size)
 
     val b1 = data.boardCollection.boardById(1)
     val b2 = data.boardCollection.boardById(2)
     val b3 = data.boardCollection.boardById(3)
+    val b4 = data.boardCollection.boardById(4)
+    val b5 = data.boardCollection.boardById(5)
+
     assertEquals(25, b1.levels.size)
     assertEquals(25, b2.levels.size)
-    assertTrue(b3.levels.isNotEmpty())
+    assertEquals(25, b3.levels.size)
+    assertEquals(25, b4.levels.size)
+    assertTrue(b5.levels.isEmpty())
+
     assertEquals(1, b2.requiredBoardId)
     assertEquals(20, b2.requiredClears)
     assertEquals(2, b3.requiredBoardId)
     assertEquals(20, b3.requiredClears)
+    assertEquals(3, b4.requiredBoardId)
+    assertEquals(20, b4.requiredClears)
+    assertEquals(4, b5.requiredBoardId)
+    assertEquals(20, b5.requiredClears)
 
     data.boardCollection.boards.forEach { board ->
       checkSlots(board.titleSlots, "board${board.id}.title")
@@ -107,47 +118,52 @@ class KidouV3Test {
           checkSlots(clause.hintPrimary, "$tag.clausePrimary[$idx]")
           checkSlots(clause.hintSecondary, "$tag.clauseSecondary[$idx]")
         }
+        if (level.tickerEnabled) {
+          assertTrue("$tag tickerSequence must be non-empty", level.tickerSequence.isNotEmpty())
+          val targets = level.requirements?.tickerTargets.orEmpty()
+          assertTrue("$tag tickerTargets must be non-empty", targets.isNotEmpty())
+          targets.forEach { tgt ->
+            assertTrue("$tag target $tgt missing in tickerSequence", tgt in level.tickerSequence)
+          }
+        }
       }
     }
   }
 
   @Test
-  fun all51LevelsCanBeSolvedAndBoardsUnlockAt20Clears() {
+  fun all100PlayableLevelsCanBeSolvedAndBoardsUnlockAt20Clears() {
     val data = loadAssets()
     val board1 = data.boardCollection.boardById(1)
     val board2 = data.boardCollection.boardById(2)
     val board3 = data.boardCollection.boardById(3)
+    val board4 = data.boardCollection.boardById(4)
+    val board5 = data.boardCollection.boardById(5)
 
     val cleared = mutableSetOf<String>()
 
-    // Board 1: levels 1..25, unlocks Board 2 at 20 clears
-    board1.levels.forEachIndexed { idx, level ->
-      solveLevelAndAssert(boardId = 1, level = level)
-      cleared.add(LevelEngine.levelKey(1, level.levelNumber))
-      if (idx + 1 < 20) {
-        assertFalse("Board 2 should stay locked at ${idx + 1}/25", LevelEngine.isBoardUnlocked(board2, cleared))
-      } else {
-        assertTrue("Board 2 must unlock at ${idx + 1}/25", LevelEngine.isBoardUnlocked(board2, cleared))
+    fun runBoard(boardId: Int, levels: List<LevelDef>, nextBoard: com.kidou.game.model.BoardDef) {
+      levels.forEachIndexed { idx, level ->
+        solveLevelAndAssert(boardId = boardId, level = level)
+        cleared.add(LevelEngine.levelKey(boardId, level.levelNumber))
+        if (idx + 1 < 20) {
+          assertFalse(
+            "Board ${nextBoard.id} must stay locked at B$boardId ${idx + 1}/25",
+            LevelEngine.isBoardUnlocked(nextBoard, cleared),
+          )
+        } else {
+          assertTrue(
+            "Board ${nextBoard.id} must unlock at B$boardId ${idx + 1}/25",
+            LevelEngine.isBoardUnlocked(nextBoard, cleared),
+          )
+        }
       }
     }
 
-    // Board 2: levels 1..25, unlocks Board 3 at 20 clears
-    board2.levels.forEachIndexed { idx, level ->
-      solveLevelAndAssert(boardId = 2, level = level)
-      cleared.add(LevelEngine.levelKey(2, level.levelNumber))
-      if (idx + 1 < 20) {
-        assertFalse("Board 3 should stay locked at B2 ${idx + 1}/25", LevelEngine.isBoardUnlocked(board3, cleared))
-      } else {
-        assertTrue("Board 3 must unlock at B2 ${idx + 1}/25", LevelEngine.isBoardUnlocked(board3, cleared))
-      }
-    }
-
-    // Board 3: all defined levels
-    board3.levels.forEach { level ->
-      solveLevelAndAssert(boardId = 3, level = level)
-      cleared.add(LevelEngine.levelKey(3, level.levelNumber))
-    }
-    assertEquals(51, cleared.size)
+    runBoard(1, board1.levels, board2)
+    runBoard(2, board2.levels, board3)
+    runBoard(3, board3.levels, board4)
+    runBoard(4, board4.levels, board5)
+    assertEquals(100, cleared.size)
   }
 
   private fun solveLevelAndAssert(boardId: Int, level: LevelDef) {
@@ -155,12 +171,13 @@ class KidouV3Test {
     assertFalse(state.isCleared)
 
     if (level.puzzleType == PuzzleType.SEQUENCE) {
-      // Wrong step must trigger soft reset with RED lamp and WARN sound
-      val wrongTrigger = if (level.sequenceSteps.first().trigger == "button_push") "key_insert" else "button_push"
+      val wrongTrigger =
+        if (level.sequenceSteps.first().trigger == "button_push") "key_insert" else "button_push"
       val wrongRes = LevelEngine.step(level, state, wrongTrigger, 1L, 1L)
       assertEquals(LampState.RED, wrongRes.newState.lamp)
       assertEquals(SoundEffect.WARN, wrongRes.sound)
       assertEquals(0, wrongRes.newState.seqStep)
+      assertFalse(wrongRes.newState.hasOperated)
       state = wrongRes.newState
 
       var t = 10L
@@ -169,6 +186,21 @@ class KidouV3Test {
           val res = LevelEngine.step(level, state, step.trigger, t, t)
           t += 1L
           state = res.newState
+          if (level.memoryMode) {
+            assertTrue(state.hasOperated)
+          }
+        }
+      }
+      if (level.memoryMode) {
+        val resetRes = LevelEngine.step(level, state, "memory_reset", t, t + 1)
+        assertFalse(resetRes.newState.hasOperated)
+        // Re-solve cleanly after reset test
+        state = resetRes.newState
+        t += 10L
+        level.sequenceSteps.forEach { step ->
+          repeat(step.repeatCount) {
+            state = LevelEngine.step(level, state, step.trigger, t, t++).newState
+          }
         }
       }
       assertTrue("Sequence level B$boardId-L${level.levelNumber} must clear", state.isCleared)
@@ -179,8 +211,7 @@ class KidouV3Test {
     val req: ConditionRequirement = level.requirements ?: ConditionRequirement()
     var t = 1L
 
-    // If hold is required, tapping normal push first must fail with RED/WARN
-    if (req.requireHold == true) {
+    if (req.requireHold == true && req.tickerTargets.isEmpty()) {
       val badPush = LevelEngine.step(level, state, "button_push", t, t++)
       assertEquals(LampState.RED, badPush.newState.lamp)
       assertEquals(SoundEffect.WARN, badPush.sound)
@@ -188,13 +219,22 @@ class KidouV3Test {
       state = badPush.newState
     }
 
-    // Resolve target boolean/enum configuration satisfying both req.*Eq and req.logicClauses
     val target = findSatisfyingConfig(req)
 
-    if (state.swA != target.swA) state = LevelEngine.step(level, state, "sw_a_toggle", t, t++).newState
-    if (state.swB != target.swB) state = LevelEngine.step(level, state, "sw_b_toggle", t, t++).newState
-    if (state.swC != target.swC) state = LevelEngine.step(level, state, "sw_c_toggle", t, t++).newState
+    // Use BFS to solve switch links cleanly
+    val switchTriggers =
+      findSwitchPath(
+        start = SwitchTuple(state.swA, state.swB, state.swC, state.swD),
+        goal = SwitchTuple(target.swA, target.swB, target.swC, target.swD),
+        links = level.switchLinks,
+      )
+    switchTriggers.forEach { trig ->
+      state = LevelEngine.step(level, state, trig, t, t++).newState
+    }
 
+    if (state.route != target.route) {
+      state = LevelEngine.step(level, state, "route_${target.route}", t, t++).newState
+    }
     if (state.conduit != target.conduit) {
       val trig = if (target.conduit == "connected") "conduit_connect" else "conduit_cut"
       state = LevelEngine.step(level, state, trig, t, t++).newState
@@ -216,26 +256,83 @@ class KidouV3Test {
       state = LevelEngine.step(level, state, trig, t, t++).newState
     }
 
-    if (req.dialEq != null) {
-      while (state.dial < req.dialEq) {
-        val trig = if (req.dialEq - state.dial >= 5) "dial_inc5" else "dial_inc"
+    // Resolve dial & valve targets including dialEqualsValve and dialPlusValveEq
+    var targetDial = req.dialEq
+    var targetValve = req.valveEq
+    if (req.dialEqualsValve == true) {
+      if (targetDial != null && targetValve == null) targetValve = targetDial
+      else if (targetValve != null && targetDial == null) targetDial = targetValve
+      else if (targetDial == null && targetValve == null) {
+        targetDial = state.dial
+        targetValve = state.dial
+      }
+    }
+    if (req.dialPlusValveEq != null) {
+      val sum = req.dialPlusValveEq
+      if (targetDial == null && targetValve == null) {
+        targetDial = (sum / 2).coerceIn(0, LevelEngine.MAX_NUMERIC_VALUE)
+        targetValve = (sum - targetDial).coerceIn(0, LevelEngine.MAX_NUMERIC_VALUE)
+      } else if (targetDial != null && targetValve == null) {
+        targetValve = (sum - targetDial).coerceIn(0, LevelEngine.MAX_NUMERIC_VALUE)
+      } else if (targetValve != null && targetDial == null) {
+        targetDial = (sum - targetValve).coerceIn(0, LevelEngine.MAX_NUMERIC_VALUE)
+      }
+    }
+
+    if (targetDial != null) {
+      while (state.dial < targetDial) {
+        val trig = if (targetDial - state.dial >= 5) "dial_inc5" else "dial_inc"
         state = LevelEngine.step(level, state, trig, t, t++).newState
       }
-      while (state.dial > req.dialEq) {
+      while (state.dial > targetDial) {
         state = LevelEngine.step(level, state, "dial_dec", t, t++).newState
       }
     }
-    if (req.valveEq != null) {
-      while (state.valve < req.valveEq) {
-        val trig = if (req.valveEq - state.valve >= 5) "valve_inc5" else "valve_inc"
+    if (targetValve != null) {
+      while (state.valve < targetValve) {
+        val trig = if (targetValve - state.valve >= 5) "valve_inc5" else "valve_inc"
         state = LevelEngine.step(level, state, trig, t, t++).newState
       }
-      while (state.valve > req.valveEq) {
+      while (state.valve > targetValve) {
         state = LevelEngine.step(level, state, "valve_dec", t, t++).newState
       }
     }
 
     when {
+      req.orderSequence.isNotEmpty() -> {
+        // Test wrong first order button triggers soft reset without crash
+        val wrongOrder = if (req.orderSequence.first() == 1) "order_2" else "order_1"
+        val badRes = LevelEngine.step(level, state, wrongOrder, t, t++)
+        assertEquals(LampState.RED, badRes.newState.lamp)
+        assertEquals(0, badRes.newState.orderProgress)
+        state = badRes.newState
+
+        req.orderSequence.forEach { d ->
+          state = LevelEngine.step(level, state, "order_$d", t, t++).newState
+        }
+      }
+      req.tickerTargets.isNotEmpty() -> {
+        val submitTrigger =
+          if ("dual_button" in level.unlockedControls) "dual_push" else "button_push"
+        // Verify missed digit has ZERO penalty / NO RED lamp
+        while (state.tickerDigit == req.tickerTargets.first()) {
+          state = LevelEngine.advanceTicker(level, state)
+        }
+        val missRes = LevelEngine.step(level, state, submitTrigger, t, t++)
+        assertTrue("Missed ticker digit must not trigger RED failure", missRes.newState.lamp != LampState.RED)
+        assertEquals(0, missRes.newState.tickerCaptures)
+        state = missRes.newState
+
+        req.tickerTargets.forEach { expectedDigit ->
+          var guard = 0
+          while (state.tickerDigit != expectedDigit && guard < 20) {
+            state = LevelEngine.advanceTicker(level, state)
+            guard++
+          }
+          assertEquals(expectedDigit, state.tickerDigit)
+          state = LevelEngine.step(level, state, submitTrigger, t, t++).newState
+        }
+      }
       req.requireHold == true -> {
         state = LevelEngine.step(level, state, "button_hold", t, t++).newState
       }
@@ -256,10 +353,45 @@ class KidouV3Test {
     assertEquals(LampState.GREEN, state.lamp)
   }
 
+  private data class SwitchTuple(val a: Boolean, val b: Boolean, val c: Boolean, val d: Boolean)
+
+  private fun findSwitchPath(
+    start: SwitchTuple,
+    goal: SwitchTuple,
+    links: Map<String, List<String>>,
+  ): List<String> {
+    if (start == goal) return emptyList()
+    val keys = listOf("sw_a", "sw_b", "sw_c", "sw_d")
+    val q = ArrayDeque<Pair<SwitchTuple, List<String>>>()
+    val seen = mutableSetOf(start)
+    q.add(start to emptyList())
+    while (q.isNotEmpty()) {
+      val (cur, path) = q.removeFirst()
+      for (k in keys) {
+        val flip = setOf(k) + links[k].orEmpty()
+        val nxt =
+          SwitchTuple(
+            a = if ("sw_a" in flip) !cur.a else cur.a,
+            b = if ("sw_b" in flip) !cur.b else cur.b,
+            c = if ("sw_c" in flip) !cur.c else cur.c,
+            d = if ("sw_d" in flip) !cur.d else cur.d,
+          )
+        val newPath = path + "${k}_toggle"
+        if (nxt == goal) return newPath
+        if (seen.add(nxt)) {
+          q.add(nxt to newPath)
+        }
+      }
+    }
+    error("Unreachable switch goal $goal from $start with links $links")
+  }
+
   private data class ModuleConfig(
     val swA: Boolean,
     val swB: Boolean,
     val swC: Boolean,
+    val swD: Boolean,
+    val route: Int,
     val lever: String,
     val key: String,
     val conduit: String,
@@ -271,6 +403,8 @@ class KidouV3Test {
     val swAOpts = if (req.swAEq != null) listOf(req.swAEq) else listOf(false, true)
     val swBOpts = if (req.swBEq != null) listOf(req.swBEq) else listOf(false, true)
     val swCOpts = if (req.swCEq != null) listOf(req.swCEq) else listOf(false, true)
+    val swDOpts = if (req.swDEq != null) listOf(req.swDEq) else listOf(false, true)
+    val routeOpts = if (req.routeEq != null) listOf(req.routeEq) else listOf(1, 2, 3)
     val leverOpts = if (req.leverEq != null) listOf(req.leverEq) else listOf("up", "down")
     val keyOpts = if (req.keyEq != null) listOf(req.keyEq) else listOf("out", "in")
     val conduitOpts = if (req.conduitEq != null) listOf(req.conduitEq) else listOf("cut", "connected")
@@ -280,14 +414,18 @@ class KidouV3Test {
     for (swA in swAOpts) {
       for (swB in swBOpts) {
         for (swC in swCOpts) {
-          for (lever in leverOpts) {
-            for (key in keyOpts) {
-              for (conduit in conduitOpts) {
-                for (lock in lockOpts) {
-                  for (slider in sliderOpts) {
-                    val cfg = ModuleConfig(swA, swB, swC, lever, key, conduit, lock, slider)
-                    if (req.logicClauses.all { clauseMatches(cfg, it) }) {
-                      return cfg
+          for (swD in swDOpts) {
+            for (route in routeOpts) {
+              for (lever in leverOpts) {
+                for (key in keyOpts) {
+                  for (conduit in conduitOpts) {
+                    for (lock in lockOpts) {
+                      for (slider in sliderOpts) {
+                        val cfg = ModuleConfig(swA, swB, swC, swD, route, lever, key, conduit, lock, slider)
+                        if (req.logicClauses.all { clauseMatches(cfg, it) }) {
+                          return cfg
+                        }
+                      }
                     }
                   }
                 }
@@ -308,6 +446,8 @@ class KidouV3Test {
           "sw_a" -> cfg.swA.toString()
           "sw_b" -> cfg.swB.toString()
           "sw_c" -> cfg.swC.toString()
+          "sw_d" -> cfg.swD.toString()
+          "route" -> cfg.route.toString()
           "lever" -> cfg.lever
           "key" -> cfg.key
           "conduit" -> cfg.conduit
@@ -369,8 +509,11 @@ class KidouV3Test {
   }
 
   @Test
-  fun themePalettesAndPrivacyConfigAreValid() {
+  fun themeNamesPalettesCreditsAndPrivacyAreValidForV4() {
     assertTrue(AppConfig.PRIVACY_POLICY_URL.startsWith("https://"))
+
+    assertEquals(listOf("デフォルト", "グリーン", "ブルー", "レッド"), ColorTheme.entries.map { it.label(AppLanguage.JA) })
+    assertEquals(listOf("Default", "Green", "Blue", "Red"), ColorTheme.entries.map { it.label(AppLanguage.EN) })
 
     val accentColors = mutableSetOf<Long>()
     ThemeMode.entries.forEach { mode ->
@@ -385,5 +528,13 @@ class KidouV3Test {
       }
     }
     assertEquals(4, accentColors.size)
+
+    listOf(AppLanguage.JA, AppLanguage.EN).forEach { lang ->
+      val credits = stringsFor(lang).creditsBody
+      assertTrue(credits.contains("Purrple Cat"))
+      assertTrue(credits.contains("CC BY 4.0"))
+      assertTrue(credits.contains("DotGothic16"))
+      assertTrue(credits.contains("OFL-1.1"))
+    }
   }
 }

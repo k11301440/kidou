@@ -25,6 +25,7 @@ class SaveRepository(context: Context) {
           discoveredWordIds = raw.discoveredWordIds ?: emptySet(),
           clearedLevelKeys = raw.clearedLevelKeys ?: emptySet(),
           operationLog = raw.operationLog ?: emptyList(),
+          hapticsEnabled = raw.hapticsEnabled ?: true,
           language = raw.language ?: AppLanguage.JA,
           themeMode = raw.themeMode ?: ThemeMode.DARK,
           colorTheme = raw.colorTheme ?: ColorTheme.AMBER_RUIN,

@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,8 +40,10 @@ import com.kidou.game.model.GlyphGrid
 import com.kidou.game.model.WordColorTag
 import com.kidou.game.model.WordDef
 import com.kidou.game.ui.components.PixelGlyph
+import com.kidou.game.ui.components.rememberKidouHapticClick
 import com.kidou.game.ui.i18n.UiStrings
 import com.kidou.game.ui.i18n.stringsFor
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouTheme
 import com.kidou.game.viewmodel.DictionaryTab
 import com.kidou.game.viewmodel.GameUiState
@@ -64,6 +65,7 @@ fun DictionarySheet(
   val palette = KidouTheme.palette
   val strings = stringsFor(uiState.language)
   val stats = uiState.translationStats
+  val hapticClick = rememberKidouHapticClick()
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var filterMode by remember { mutableStateOf(DictFilter.ALL) }
   var tagFilter by remember { mutableStateOf<WordColorTag?>(null) }
@@ -107,14 +109,14 @@ fun DictionarySheet(
       ) {
         Text(
           text = strings.dictionary,
-          fontFamily = FontFamily.Monospace,
-          fontWeight = FontWeight.Bold,
-          fontSize = 18.sp,
+          fontFamily = DotGothic16FontFamily,
+          fontWeight = FontWeight.Normal,
+          fontSize = 19.sp,
           color = palette.glyph,
         )
         Text(
           text = strings.registeredStats(stats.translatedCount, stats.totalCount, stats.percent),
-          fontFamily = FontFamily.Monospace,
+          fontFamily = DotGothic16FontFamily,
           fontSize = 12.sp,
           color = palette.accentPrimary,
         )
@@ -127,13 +129,13 @@ fun DictionarySheet(
         TabPill(
           label = "${strings.tabThisScreen} (${uiState.screenWordIds.size})",
           selected = uiState.dictionaryTab == DictionaryTab.SCREEN,
-          onClick = { onSelectTab(DictionaryTab.SCREEN) },
+          onClick = { hapticClick(); onSelectTab(DictionaryTab.SCREEN) },
           modifier = Modifier.weight(1f),
         )
         TabPill(
           label = "${strings.tabAllWords} (${uiState.discoveredWordIds.size})",
           selected = uiState.dictionaryTab == DictionaryTab.ALL,
-          onClick = { onSelectTab(DictionaryTab.ALL) },
+          onClick = { hapticClick(); onSelectTab(DictionaryTab.ALL) },
           modifier = Modifier.weight(1f),
         )
       }
@@ -147,6 +149,7 @@ fun DictionarySheet(
           selected = filterMode == DictFilter.ALL && tagFilter == null,
           color = palette.glyph,
           onClick = {
+            hapticClick()
             filterMode = DictFilter.ALL
             tagFilter = null
           },
@@ -156,6 +159,7 @@ fun DictionarySheet(
           selected = filterMode == DictFilter.UNREGISTERED,
           color = palette.accentPrimary,
           onClick = {
+            hapticClick()
             filterMode =
               if (filterMode == DictFilter.UNREGISTERED) DictFilter.ALL else DictFilter.UNREGISTERED
           },
@@ -165,7 +169,10 @@ fun DictionarySheet(
             label = tag.label(uiState.language),
             selected = tagFilter == tag,
             color = palette.tagColor(tag),
-            onClick = { tagFilter = if (tagFilter == tag) null else tag },
+            onClick = {
+              hapticClick()
+              tagFilter = if (tagFilter == tag) null else tag
+            },
           )
         }
       }
@@ -181,7 +188,7 @@ fun DictionarySheet(
             entry = uiState.dictionary[wordId],
             language = uiState.language,
             strings = strings,
-            onClick = { onEditWord(wordId) },
+            onClick = { hapticClick(); onEditWord(wordId) },
           )
         }
       }
@@ -216,8 +223,8 @@ private fun TabPill(
     Text(
       text = label,
       color = if (selected) palette.accentPrimary else palette.muted,
-      fontFamily = FontFamily.Monospace,
-      fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+      fontFamily = DotGothic16FontFamily,
+      fontWeight = FontWeight.Normal,
       fontSize = 12.sp,
     )
   }
@@ -246,7 +253,7 @@ private fun FilterChipBox(
     Text(
       text = label,
       color = if (selected) color else palette.muted,
-      fontFamily = FontFamily.Monospace,
+      fontFamily = DotGothic16FontFamily,
       fontSize = 11.sp,
     )
   }
@@ -304,9 +311,9 @@ private fun DictionaryWordRow(
         Text(
           text = translation.ifEmpty { strings.unregistered },
           color = if (translation.isNotEmpty()) palette.glyph else palette.muted,
-          fontFamily = FontFamily.Monospace,
-          fontWeight = FontWeight.Bold,
-          fontSize = 14.sp,
+          fontFamily = DotGothic16FontFamily,
+          fontWeight = FontWeight.Normal,
+          fontSize = 15.sp,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis,
         )
@@ -314,7 +321,7 @@ private fun DictionaryWordRow(
           Text(
             text = tag.label(language),
             color = tagColor,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = DotGothic16FontFamily,
             fontSize = 10.sp,
             modifier =
               Modifier
@@ -326,7 +333,7 @@ private fun DictionaryWordRow(
           Text(
             text = sourceBadge,
             color = palette.accentSecondary,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = DotGothic16FontFamily,
             fontSize = 9.sp,
             modifier =
               Modifier
@@ -339,7 +346,7 @@ private fun DictionaryWordRow(
         Text(
           text = memo,
           color = palette.muted,
-          fontFamily = FontFamily.Monospace,
+          fontFamily = DotGothic16FontFamily,
           fontSize = 11.sp,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis,
@@ -350,7 +357,7 @@ private fun DictionaryWordRow(
     Text(
       text = strings.edit,
       color = palette.accentPrimary,
-      fontFamily = FontFamily.Monospace,
+      fontFamily = DotGothic16FontFamily,
       fontSize = 11.sp,
     )
   }

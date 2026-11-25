@@ -30,10 +30,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidou.game.BuildConfig
 import com.kidou.game.model.AppLanguage
 import com.kidou.game.model.GlyphGrid
 import com.kidou.game.ui.components.PixelActionButton
@@ -41,6 +41,7 @@ import com.kidou.game.ui.components.PixelBevelPad
 import com.kidou.game.ui.components.PixelGlyph
 import com.kidou.game.ui.components.PixelStonePanel
 import com.kidou.game.ui.i18n.stringsFor
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouPalette
 import com.kidou.game.ui.theme.KidouTheme
 import kotlin.math.floor
@@ -131,17 +132,18 @@ fun TitleScreen(
           Text(
             text = "KIDOU",
             color = palette.glyph,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            fontSize = 36.sp,
+            fontFamily = DotGothic16FontFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 38.sp,
             letterSpacing = 6.sp,
           )
 
           Text(
             text = subtitle,
             color = palette.accentPrimary,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 12.sp,
+            fontFamily = DotGothic16FontFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 13.sp,
             letterSpacing = 1.5.sp,
           )
 
@@ -159,10 +161,14 @@ fun TitleScreen(
           ) {
             Text(
               text = strings.startGame,
-              color = palette.accentPrimary,
-              fontFamily = FontFamily.Monospace,
-              fontWeight = FontWeight.Bold,
-              fontSize = 16.sp,
+              color = if (com.kidou.game.ui.components.LocalPadPressed.current) {
+                if (palette.isDark) palette.background else palette.tile
+              } else {
+                palette.accentPrimary
+              },
+              fontFamily = DotGothic16FontFamily,
+              fontWeight = FontWeight.Normal,
+              fontSize = 17.sp,
               letterSpacing = 2.sp,
             )
           }
@@ -177,9 +183,10 @@ fun TitleScreen(
             .padding(horizontal = 10.dp, vertical = 4.dp),
       ) {
         Text(
-          text = "v0.3.0 PROTOTYPE",
+          text = "v${BuildConfig.VERSION_NAME} PROTOTYPE",
           color = palette.muted,
-          fontFamily = FontFamily.Monospace,
+          fontFamily = DotGothic16FontFamily,
+          fontWeight = FontWeight.Normal,
           fontSize = 10.sp,
         )
       }

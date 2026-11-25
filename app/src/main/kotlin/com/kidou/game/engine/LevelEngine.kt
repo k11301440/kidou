@@ -31,6 +31,7 @@ object LevelEngine {
 
   fun createInitialState(boardId: Int, levelDef: LevelDef): LevelRuntimeState {
     val init = levelDef.initialState
+    val firstTickerDigit = levelDef.tickerSequence.firstOrNull() ?: 0
     return LevelRuntimeState(
       boardId = boardId,
       levelNumber = levelDef.levelNumber,
@@ -43,15 +44,33 @@ object LevelEngine {
       swA = init.swA,
       swB = init.swB,
       swC = init.swC,
+      swD = init.swD,
+      route = if (init.route in 1..3) init.route else 1,
       slider = init.slider,
       buttonPresses = 0,
       dualPresses = 0,
+      orderProgress = 0,
+      tickerIndex = 0,
+      tickerDigit = firstTickerDigit,
+      tickerCaptures = 0,
+      hasOperated = false,
       seqStep = 0,
       seqSubProgress = 0,
       isCleared = false,
       lamp = LampState.fromWire(init.lamp),
       primaryMessage = init.primaryMessage,
       secondaryMessage = init.secondaryMessage,
+    )
+  }
+
+  fun advanceTicker(levelDef: LevelDef, state: LevelRuntimeState): LevelRuntimeState {
+    if (!levelDef.tickerEnabled || levelDef.tickerSequence.isEmpty() || state.isCleared) {
+      return state
+    }
+    val nextIndex = (state.tickerIndex + 1) % levelDef.tickerSequence.size
+    return state.copy(
+      tickerIndex = nextIndex,
+      tickerDigit = levelDef.tickerSequence[nextIndex],
     )
   }
 
@@ -62,6 +81,22 @@ object LevelEngine {
     timestampMs: Long = System.currentTimeMillis(),
     logId: Long = timestampMs,
   ): LevelStepResult {
+    if (trigger == "memory_reset") {
+      val fresh =
+        createInitialState(currentState.boardId, levelDef).copy(
+          tickerIndex = currentState.tickerIndex,
+          tickerDigit = currentState.tickerDigit,
+        )
+      return makeResult(
+        levelDef = levelDef,
+        nextState = fresh,
+        trigger = trigger,
+        actionSlots = triggerToSlots(trigger),
+        sound = SoundEffect.CLICK,
+        timestampMs = timestampMs,
+        logId = logId,
+      )
+    }
     return when (levelDef.puzzleType) {
       PuzzleType.CONDITION -> stepCondition(levelDef, currentState, trigger, timestampMs, logId)
       PuzzleType.SEQUENCE -> stepSequence(levelDef, currentState, trigger, timestampMs, logId)
@@ -76,10 +111,18 @@ object LevelEngine {
     logId: Long,
   ): LevelStepResult {
     val actionSlots = triggerToSlots(trigger)
+    val isOrderTrigger = trigger in setOf("order_1", "order_2", "order_3", "order_4")
     val isPrimarySubmit = trigger in setOf("button_push", "button_hold", "dual_push")
+    val nextHasOperated = if (state.isCleared) state.hasOperated else (state.hasOperated || levelDef.memoryMode)
 
-    if (!isPrimarySubmit) {
-      val updated = applyModuleTrigger(state, trigger).copy(buttonPresses = 0, dualPresses = 0)
+    if (!isPrimarySubmit && !isOrderTrigger) {
+      val updated =
+        applyModuleTrigger(levelDef, state, trigger).copy(
+          buttonPresses = 0,
+          dualPresses = 0,
+          orderProgress = 0,
+          hasOperated = nextHasOperated,
+        )
       val (primary, secondary, sound) = moduleReaction(updated, trigger)
       val nextState =
         updated.copy(
@@ -97,11 +140,74 @@ object LevelEngine {
         state.copy(
           buttonPresses = 0,
           dualPresses = 0,
+          orderProgress = 0,
+          hasOperated = nextHasOperated,
           lamp = LampState.RED,
           primaryMessage = mismatch.first,
           secondaryMessage = mismatch.second,
         )
       return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.WARN, timestampMs, logId)
+    }
+
+    // 4-button ordered sequence requirement
+    if (req.orderSequence.isNotEmpty()) {
+      if (!isOrderTrigger) {
+        val nextState =
+          state.copy(
+            orderProgress = 0,
+            hasOperated = false,
+            lamp = LampState.RED,
+            primaryMessage = listOf(listOf("n_button"), listOf("v_match", "m_not")),
+            secondaryMessage = listOf(listOf("n_machine"), listOf("v_stop")),
+          )
+        return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.WARN, timestampMs, logId)
+      }
+      if (state.isCleared) {
+        val (primary, secondary, sound) = moduleReaction(state, trigger)
+        val nextState = state.copy(primaryMessage = primary, secondaryMessage = secondary)
+        return makeResult(levelDef, nextState, trigger, actionSlots, sound, timestampMs, logId)
+      }
+      val pressedDigit = trigger.removePrefix("order_").toIntOrNull() ?: 0
+      val expectedDigit = req.orderSequence.getOrNull(state.orderProgress)
+      if (pressedDigit != expectedDigit) {
+        val nextState =
+          state.copy(
+            orderProgress = 0,
+            hasOperated = false,
+            lamp = LampState.RED,
+            primaryMessage = listOf(listOf("n_button"), listOf("v_match", "m_not")),
+            secondaryMessage = listOf(listOf("n_machine"), listOf("v_stop")),
+          )
+        return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.WARN, timestampMs, logId)
+      }
+      val nextProgress = state.orderProgress + 1
+      if (nextProgress >= req.orderSequence.size) {
+        val nextState =
+          state.copy(
+            orderProgress = nextProgress,
+            isCleared = true,
+            hasOperated = nextHasOperated,
+            lamp = LampState.GREEN,
+            primaryMessage = levelDef.completionPrimary,
+            secondaryMessage = levelDef.completionSecondary,
+          )
+        return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.PHASE_CLEAR, timestampMs, logId)
+      }
+      val nextState =
+        state.copy(
+          orderProgress = nextProgress,
+          hasOperated = nextHasOperated,
+          lamp = LampState.AMBER,
+          primaryMessage = actionSlots + listOf(Base5.toDigitWordIds(nextProgress) + "m_ord"),
+          secondaryMessage = listOf(listOf("n_lamp"), listOf("v_activate")),
+        )
+      return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.CHIME, timestampMs, logId)
+    }
+
+    if (isOrderTrigger) {
+      val (primary, secondary, sound) = moduleReaction(state, trigger)
+      val nextState = state.copy(hasOperated = nextHasOperated, primaryMessage = primary, secondaryMessage = secondary)
+      return makeResult(levelDef, nextState, trigger, actionSlots, sound, timestampMs, logId)
     }
 
     // Hold requirement
@@ -113,15 +219,59 @@ object LevelEngine {
           state.copy(
             buttonPresses = 0,
             dualPresses = 0,
+            hasOperated = nextHasOperated,
             lamp = LampState.RED,
             primaryMessage = primary,
             secondaryMessage = secondary,
           )
         return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.WARN, timestampMs, logId)
       }
+      if (req.tickerTargets.isEmpty()) {
+        val nextState =
+          state.copy(
+            isCleared = true,
+            hasOperated = nextHasOperated,
+            lamp = LampState.GREEN,
+            primaryMessage = levelDef.completionPrimary,
+            secondaryMessage = levelDef.completionSecondary,
+          )
+        return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.PHASE_CLEAR, timestampMs, logId)
+      }
+    }
+
+    // Cycling digit capture requirement (no penalty on missed timing; wait for next loop)
+    if (req.tickerTargets.isNotEmpty()) {
+      if (state.isCleared) {
+        return makeResult(levelDef, state, trigger, actionSlots, SoundEffect.CLICK, timestampMs, logId)
+      }
+      val expectedTarget = req.tickerTargets.getOrNull(state.tickerCaptures) ?: req.tickerTargets.last()
+      if (state.tickerDigit != expectedTarget) {
+        val nextState =
+          state.copy(
+            lamp = LampState.AMBER,
+            hasOperated = nextHasOperated,
+            primaryMessage = listOf(listOf("n_signal"), listOf("d_${state.tickerDigit}"), listOf("v_match", "m_not")),
+            secondaryMessage = listOf(listOf("n_signal"), listOf("v_flow")),
+          )
+        return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.CLICK, timestampMs, logId)
+      }
+      val nextCaptures = state.tickerCaptures + 1
+      if (nextCaptures < req.tickerTargets.size) {
+        val nextState =
+          state.copy(
+            tickerCaptures = nextCaptures,
+            lamp = LampState.AMBER,
+            hasOperated = nextHasOperated,
+            primaryMessage = listOf(listOf("n_signal"), listOf("d_${state.tickerDigit}"), listOf("adj_complete")),
+            secondaryMessage = listOf(Base5.toDigitWordIds(nextCaptures) + "m_times"),
+          )
+        return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.CHIME, timestampMs, logId)
+      }
       val nextState =
         state.copy(
+          tickerCaptures = nextCaptures,
           isCleared = true,
+          hasOperated = nextHasOperated,
           lamp = LampState.GREEN,
           primaryMessage = levelDef.completionPrimary,
           secondaryMessage = levelDef.completionSecondary,
@@ -138,6 +288,7 @@ object LevelEngine {
         val nextState =
           state.copy(
             dualPresses = nextDual,
+            hasOperated = nextHasOperated,
             lamp = LampState.AMBER,
             primaryMessage = primary,
             secondaryMessage = secondary,
@@ -148,6 +299,7 @@ object LevelEngine {
         state.copy(
           dualPresses = nextDual,
           isCleared = true,
+          hasOperated = nextHasOperated,
           lamp = LampState.GREEN,
           primaryMessage = levelDef.completionPrimary,
           secondaryMessage = levelDef.completionSecondary,
@@ -164,6 +316,7 @@ object LevelEngine {
       val nextState =
         state.copy(
           buttonPresses = nextPresses,
+          hasOperated = nextHasOperated,
           lamp = LampState.AMBER,
           primaryMessage = primary,
           secondaryMessage = secondary,
@@ -175,6 +328,7 @@ object LevelEngine {
       state.copy(
         buttonPresses = nextPresses,
         isCleared = true,
+        hasOperated = nextHasOperated,
         lamp = LampState.GREEN,
         primaryMessage = levelDef.completionPrimary,
         secondaryMessage = levelDef.completionSecondary,
@@ -193,7 +347,7 @@ object LevelEngine {
     val actionSlots = triggerToSlots(trigger)
 
     if (state.isCleared || state.seqStep >= steps.size) {
-      val updated = applyModuleTrigger(state, trigger)
+      val updated = applyModuleTrigger(levelDef, state, trigger)
       val (primary, secondary, sound) = moduleReaction(updated, trigger)
       val nextState = updated.copy(primaryMessage = primary, secondaryMessage = secondary)
       return makeResult(levelDef, nextState, trigger, actionSlots, sound, timestampMs, logId)
@@ -201,7 +355,11 @@ object LevelEngine {
 
     val expectedStep = steps[state.seqStep]
     if (trigger != expectedStep.trigger) {
-      val reset = createInitialState(state.boardId, levelDef)
+      val reset =
+        createInitialState(state.boardId, levelDef).copy(
+          tickerIndex = state.tickerIndex,
+          tickerDigit = state.tickerDigit,
+        )
       val primary = expectedStep.hintPrimary
       val secondary = listOf(listOf("n_machine"), listOf("v_stop"), listOf("adj_danger"))
       val nextState =
@@ -213,13 +371,15 @@ object LevelEngine {
       return makeResult(levelDef, nextState, trigger, actionSlots, SoundEffect.WARN, timestampMs, logId)
     }
 
-    val updatedHardware = applyModuleTrigger(state, trigger)
+    val updatedHardware = applyModuleTrigger(levelDef, state, trigger)
+    val nextHasOperated = state.hasOperated || levelDef.memoryMode
     val nextSub = state.seqSubProgress + 1
     if (nextSub < expectedStep.repeatCount) {
       val primary = actionSlots + listOf(Base5.toDigitWordIds(nextSub) + "m_times")
       val nextState =
         updatedHardware.copy(
           seqSubProgress = nextSub,
+          hasOperated = nextHasOperated,
           lamp = LampState.AMBER,
           primaryMessage = primary,
           secondaryMessage = emptyList(),
@@ -233,6 +393,7 @@ object LevelEngine {
         updatedHardware.copy(
           seqStep = nextStepIndex,
           seqSubProgress = 0,
+          hasOperated = nextHasOperated,
           isCleared = true,
           lamp = LampState.GREEN,
           primaryMessage = levelDef.completionPrimary,
@@ -247,6 +408,7 @@ object LevelEngine {
       updatedHardware.copy(
         seqStep = nextStepIndex,
         seqSubProgress = 0,
+        hasOperated = nextHasOperated,
         lamp = LampState.AMBER,
         primaryMessage = actionSlots,
         secondaryMessage = stepCompleteSecondary,
@@ -283,8 +445,29 @@ object LevelEngine {
     )
   }
 
-  private fun applyModuleTrigger(state: LevelRuntimeState, trigger: String): LevelRuntimeState =
-    when (trigger) {
+  private fun applyModuleTrigger(
+    levelDef: LevelDef,
+    state: LevelRuntimeState,
+    trigger: String,
+  ): LevelRuntimeState {
+    val switchKey =
+      when (trigger) {
+        "sw_a_toggle" -> "sw_a"
+        "sw_b_toggle" -> "sw_b"
+        "sw_c_toggle" -> "sw_c"
+        "sw_d_toggle" -> "sw_d"
+        else -> null
+      }
+    if (switchKey != null) {
+      val toFlip = setOf(switchKey) + levelDef.switchLinks[switchKey].orEmpty()
+      return state.copy(
+        swA = if ("sw_a" in toFlip) !state.swA else state.swA,
+        swB = if ("sw_b" in toFlip) !state.swB else state.swB,
+        swC = if ("sw_c" in toFlip) !state.swC else state.swC,
+        swD = if ("sw_d" in toFlip) !state.swD else state.swD,
+      )
+    }
+    return when (trigger) {
       "lever_pull" -> state.copy(lever = "down")
       "lever_push" -> state.copy(lever = "up")
       "key_insert" -> state.copy(key = "in")
@@ -293,9 +476,10 @@ object LevelEngine {
       "conduit_cut" -> state.copy(conduit = "cut")
       "lock_lock" -> state.copy(lock = "locked")
       "lock_unlock" -> state.copy(lock = "unlocked")
-      "sw_a_toggle" -> state.copy(swA = !state.swA)
-      "sw_b_toggle" -> state.copy(swB = !state.swB)
-      "sw_c_toggle" -> state.copy(swC = !state.swC)
+      "route_1" -> state.copy(route = 1)
+      "route_2" -> state.copy(route = 2)
+      "route_3" -> state.copy(route = 3)
+      "route_next" -> state.copy(route = (state.route % 3) + 1)
       "slider_right" -> state.copy(slider = "right")
       "slider_left" -> state.copy(slider = "left")
       "dial_inc" -> state.copy(dial = (state.dial + 1).coerceAtMost(MAX_NUMERIC_VALUE))
@@ -306,6 +490,7 @@ object LevelEngine {
       "valve_inc5" -> state.copy(valve = (state.valve + 5).coerceAtMost(MAX_NUMERIC_VALUE))
       else -> state
     }
+  }
 
   private fun moduleReaction(
     updated: LevelRuntimeState,
@@ -341,6 +526,32 @@ object LevelEngine {
           emptyList(),
           SoundEffect.CLICK,
         )
+      "sw_d_toggle" ->
+        Triple(
+          listOf(listOf("n_switch", "d_4"), listOf(if (updated.swD) "v_activate" else "v_stop")),
+          emptyList(),
+          SoundEffect.CLICK,
+        )
+      "route_1",
+      "route_2",
+      "route_3",
+      "route_next" ->
+        Triple(
+          listOf(listOf("n_route"), Base5.toDigitWordIds(updated.route)),
+          emptyList(),
+          SoundEffect.CLUNK,
+        )
+      "order_1",
+      "order_2",
+      "order_3",
+      "order_4" -> {
+        val digit = trigger.removePrefix("order_").toIntOrNull() ?: 1
+        Triple(
+          listOf(listOf("n_button"), listOf("d_$digit")),
+          emptyList(),
+          SoundEffect.CLICK,
+        )
+      }
       "slider_right" ->
         Triple(listOf(listOf("n_slider"), listOf("v_right")), emptyList(), SoundEffect.RATCHET)
       "slider_left" ->
@@ -388,6 +599,14 @@ object LevelEngine {
       return listOf(listOf("n_switch", "d_3"), listOf(if (req.swCEq) "v_activate" else "v_stop", "m_not")) to
         listOf(listOf("n_machine"), listOf("v_stop"))
     }
+    if (req.swDEq != null && state.swD != req.swDEq) {
+      return listOf(listOf("n_switch", "d_4"), listOf(if (req.swDEq) "v_activate" else "v_stop", "m_not")) to
+        listOf(listOf("n_machine"), listOf("v_stop"))
+    }
+    if (req.routeEq != null && state.route != req.routeEq) {
+      return listOf(listOf("n_route"), listOf("v_match", "m_not")) to
+        listOf(listOf("n_route"), Base5.toDigitWordIds(state.route))
+    }
     if (req.conduitEq != null && state.conduit != req.conduitEq) {
       val verb = if (req.conduitEq == "connected") "v_connect" else "v_cut"
       return listOf(listOf("n_conduit"), listOf(verb, "m_not")) to
@@ -418,6 +637,15 @@ object LevelEngine {
       return listOf(listOf("n_valve"), listOf("v_match", "m_not")) to
         listOf(listOf("n_valve"), listOf(dirVerb), Base5.toDigitWordIds(state.valve))
     }
+    if (req.dialEqualsValve == true && state.dial != state.valve) {
+      return listOf(listOf("n_dial"), listOf("n_valve"), listOf("m_same", "m_not")) to
+        listOf(listOf("n_machine"), listOf("v_stop"))
+    }
+    if (req.dialPlusValveEq != null && state.dial + state.valve != req.dialPlusValveEq) {
+      val dirVerb = if (state.dial + state.valve < req.dialPlusValveEq) "v_increase" else "v_decrease"
+      return listOf(listOf("n_dial"), listOf("n_valve"), listOf("v_match", "m_not")) to
+        listOf(listOf("n_machine"), listOf(dirVerb))
+    }
     if (req.leverEq != null && state.lever != req.leverEq) {
       val verb = if (req.leverEq == "up") "v_up" else "v_down"
       return listOf(listOf("n_lever"), listOf(verb, "m_not")) to
@@ -442,11 +670,15 @@ object LevelEngine {
         "sw_a" -> state.swA.toString()
         "sw_b" -> state.swB.toString()
         "sw_c" -> state.swC.toString()
+        "sw_d" -> state.swD.toString()
+        "route" -> state.route.toString()
         "lever" -> state.lever
         "key" -> state.key
         "conduit" -> state.conduit
         "lock" -> state.lock
         "slider" -> state.slider
+        "dial" -> state.dial.toString()
+        "valve" -> state.valve.toString()
         else -> ""
       }
     return actual == check.expected
@@ -457,6 +689,10 @@ object LevelEngine {
       "button_push" -> listOf(listOf("n_button"), listOf("v_push"))
       "button_hold" -> listOf(listOf("n_button"), listOf("v_hold"))
       "dual_push" -> listOf(listOf("n_button", "d_2"), listOf("m_together"), listOf("v_push"))
+      "order_1" -> listOf(listOf("n_button"), listOf("d_1"), listOf("v_push"))
+      "order_2" -> listOf(listOf("n_button"), listOf("d_2"), listOf("v_push"))
+      "order_3" -> listOf(listOf("n_button"), listOf("d_3"), listOf("v_push"))
+      "order_4" -> listOf(listOf("n_button"), listOf("d_4"), listOf("v_push"))
       "lever_pull" -> listOf(listOf("n_lever"), listOf("v_pull"))
       "lever_push" -> listOf(listOf("n_lever"), listOf("v_push"))
       "key_insert" -> listOf(listOf("n_key"), listOf("v_insert"))
@@ -468,12 +704,18 @@ object LevelEngine {
       "sw_a_toggle" -> listOf(listOf("n_switch", "d_1"))
       "sw_b_toggle" -> listOf(listOf("n_switch", "d_2"))
       "sw_c_toggle" -> listOf(listOf("n_switch", "d_3"))
+      "sw_d_toggle" -> listOf(listOf("n_switch", "d_4"))
+      "route_1" -> listOf(listOf("n_route"), listOf("d_1"))
+      "route_2" -> listOf(listOf("n_route"), listOf("d_2"))
+      "route_3" -> listOf(listOf("n_route"), listOf("d_3"))
+      "route_next" -> listOf(listOf("n_route"), listOf("v_turn"))
       "slider_right" -> listOf(listOf("n_slider"), listOf("v_right"))
       "slider_left" -> listOf(listOf("n_slider"), listOf("v_left"))
       "dial_inc", "dial_inc5" -> listOf(listOf("n_dial"), listOf("v_increase"))
       "dial_dec" -> listOf(listOf("n_dial"), listOf("v_decrease"))
       "valve_inc", "valve_inc5" -> listOf(listOf("n_valve"), listOf("v_increase"))
       "valve_dec" -> listOf(listOf("n_valve"), listOf("v_decrease"))
+      "memory_reset" -> listOf(listOf("v_hide"))
       else -> emptyList()
     }
 
@@ -492,6 +734,13 @@ object LevelEngine {
     addSlots(state.primaryMessage)
     addSlots(state.secondaryMessage)
     levelDef.plates.forEach { addSlots(it) }
+    if (levelDef.tickerEnabled) {
+      ids.add("n_signal")
+      ids.addAll(Base5.toDigitWordIds(state.tickerDigit))
+    }
+    if (levelDef.memoryMode) {
+      ids.add("v_hide")
+    }
     if (state.isCleared) {
       ids.add("m_next")
     }
@@ -510,6 +759,10 @@ object LevelEngine {
           ids.add("n_button")
           ids.add("d_2")
           ids.add("v_push")
+        }
+        "order_pad" -> {
+          ids.add("n_button")
+          ids.addAll(listOf("d_1", "d_2", "d_3", "d_4"))
         }
         "lever" -> {
           ids.add("n_lever")
@@ -541,6 +794,16 @@ object LevelEngine {
           ids.add("n_switch")
           ids.add("d_3")
           ids.add(if (state.swC) "v_activate" else "v_stop")
+        }
+        "sw_d" -> {
+          ids.add("n_switch")
+          ids.add("d_4")
+          ids.add(if (state.swD) "v_activate" else "v_stop")
+        }
+        "route" -> {
+          ids.add("n_route")
+          ids.addAll(listOf("d_1", "d_2", "d_3"))
+          ids.addAll(Base5.toDigitWordIds(state.route))
         }
         "slider" -> {
           ids.add("n_slider")

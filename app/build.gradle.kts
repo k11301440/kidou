@@ -1,3 +1,6 @@
+import java.io.File
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
@@ -11,8 +14,8 @@ android {
     applicationId = "com.kidou.game"
     minSdk = 26
     targetSdk = 36
-    versionCode = 3
-    versionName = "0.3.0"
+    versionCode = 4
+    versionName = "0.4.0"
 
     val admobAppId =
       (project.findProperty("KIDOU_ADMOB_APP_ID") as? String)
@@ -25,10 +28,39 @@ android {
     buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"$admobRewardedId\"")
   }
 
+  val keystorePropsFile =
+    listOfNotNull(
+      (project.findProperty("KIDOU_KEYSTORE_PROPERTIES") as? String)?.let { file(it) },
+      rootProject.file("keystore.properties"),
+      File(System.getProperty("user.home"), ".kidou-signing/keystore.properties"),
+    ).firstOrNull { it.exists() && it.isFile }
+
+  signingConfigs {
+    if (keystorePropsFile != null) {
+      val props = Properties().apply { keystorePropsFile.inputStream().use { load(it) } }
+      val storePath = props.getProperty("storeFile")
+      if (!storePath.isNullOrBlank()) {
+        val resolvedStore = file(storePath)
+        if (resolvedStore.exists()) {
+          create("release") {
+            storeFile = resolvedStore
+            storePassword = props.getProperty("storePassword")
+            keyAlias = props.getProperty("keyAlias")
+            keyPassword = props.getProperty("keyPassword")
+          }
+        }
+      }
+    }
+  }
+
   buildTypes {
     release {
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      val releaseSigning = signingConfigs.findByName("release")
+      if (releaseSigning != null) {
+        signingConfig = releaseSigning
+      }
     }
   }
   compileOptions {

@@ -38,14 +38,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,13 +56,16 @@ import com.kidou.game.model.WordDef
 import com.kidou.game.ui.components.EmbeddedGlyphWithRuby
 import com.kidou.game.ui.components.GlyphSentenceRow
 import com.kidou.game.ui.components.GlyphWordTile
+import com.kidou.game.ui.components.LocalPadPressed
 import com.kidou.game.ui.components.PixelActionButton
 import com.kidou.game.ui.components.PixelBevelPad
 import com.kidou.game.ui.components.PixelCrtDisplay
 import com.kidou.game.ui.components.PixelGlyph
 import com.kidou.game.ui.components.PixelLed
 import com.kidou.game.ui.components.PixelStonePanel
+import com.kidou.game.ui.components.rememberKidouHapticClick
 import com.kidou.game.ui.i18n.stringsFor
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouTheme
 import com.kidou.game.viewmodel.GameUiState
 import kotlin.math.abs
@@ -79,6 +78,7 @@ fun LevelScreen(
   onBackToBoard: () -> Unit,
   onOpenNextLevel: (Int, Int) -> Unit,
   onTrigger: (String) -> Unit,
+  onTickTicker: () -> Unit,
   onWordClick: (String) -> Unit,
   onOpenDictionary: () -> Unit,
   onOpenMenu: () -> Unit,
@@ -89,11 +89,26 @@ fun LevelScreen(
   val levelDef = boardDef.levelByNumber(levelState.levelNumber) ?: return
   val palette = KidouTheme.palette
   val strings = stringsFor(uiState.language)
-  val haptics = LocalHapticFeedback.current
   val nextLevelExists = boardDef.levelByNumber(levelState.levelNumber + 1) != null
   val displayScroll = rememberScrollState()
   val coroutineScope = rememberCoroutineScope()
   var viewportHeightPx by remember { mutableStateOf(1f) }
+  val req = levelDef.requirements
+
+  // Cycling digit display loop (non-failing, repeats continuously while not cleared)
+  LaunchedEffect(
+    levelState.boardId,
+    levelState.levelNumber,
+    levelDef.tickerEnabled,
+    levelState.isCleared,
+  ) {
+    if (!levelDef.tickerEnabled || levelState.isCleared) return@LaunchedEffect
+    val interval = levelDef.tickerIntervalMs.coerceAtLeast(450L)
+    while (true) {
+      delay(interval)
+      onTickTicker()
+    }
+  }
 
   Column(
     modifier =
@@ -129,7 +144,7 @@ fun LevelScreen(
       }
     }
 
-    // 2. Upper Half: Riveted Machine Chassis + Scrollable CRT & Plates with Scroll Indicators (§4, §7)
+    // 2. Upper Half: Machine Chassis + Scrollable CRT & Plates
     PixelStonePanel(
       borderColor = if (levelState.isCleared) palette.statusSuccess else palette.borderBright,
       modifier = Modifier.fillMaxWidth().weight(1f),
@@ -163,20 +178,32 @@ fun LevelScreen(
               size = 14.dp,
               modifier = Modifier.semantics { contentDescription = "lamp_${levelState.lamp.name.lowercase()}" },
             )
-            if (levelDef.sequenceSteps.isNotEmpty()) {
-              levelDef.sequenceSteps.indices.forEach { stepIdx ->
-                PixelLed(
-                  color =
-                    if (stepIdx < levelState.seqStep || levelState.isCleared) palette.statusSuccess
-                    else palette.lampOff,
-                  size = 10.dp,
-                )
+            val stepTotal =
+              when {
+                levelDef.sequenceSteps.isNotEmpty() -> levelDef.sequenceSteps.size
+                req?.orderSequence?.isNotEmpty() == true -> req.orderSequence.size
+                req?.tickerTargets?.isNotEmpty() == true -> req.tickerTargets.size
+                else -> 0
               }
+            val stepCompleted =
+              when {
+                levelDef.sequenceSteps.isNotEmpty() -> levelState.seqStep
+                req?.orderSequence?.isNotEmpty() == true -> levelState.orderProgress
+                req?.tickerTargets?.isNotEmpty() == true -> levelState.tickerCaptures
+                else -> 0
+              }
+            for (stepIdx in 0 until stepTotal) {
+              PixelLed(
+                color =
+                  if (stepIdx < stepCompleted || levelState.isCleared) palette.statusSuccess
+                  else palette.lampOff,
+                size = 10.dp,
+              )
             }
           }
         }
 
-        // Scrollable Display Area + Right Scrollbar + Bottom Down-Arrow Continuation Indicator (§7)
+        // Scrollable Display Area + Right Scrollbar + Down Arrow Indicator
         Box(
           modifier =
             Modifier
@@ -192,7 +219,7 @@ fun LevelScreen(
                 .padding(end = if (displayScroll.maxValue > 0) 10.dp else 0.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
           ) {
-            // Recessed Phosphor CRT Readout (Activation complete shown strictly as glyphs + ruby, §4)
+            // Recessed Phosphor CRT Readout
             PixelCrtDisplay(
               borderColor =
                 when (levelState.lamp) {
@@ -201,6 +228,72 @@ fun LevelScreen(
                   else -> palette.borderBright
                 },
             ) {
+              if (levelDef.tickerEnabled) {
+                val digitId = "d_${levelState.tickerDigit}"
+                Row(
+                  modifier =
+                    Modifier
+                      .fillMaxWidth()
+                      .background(palette.tile.copy(alpha = 0.72f), RectangleShape)
+                      .border(
+                        1.5.dp,
+                        if (levelState.isCleared) palette.statusSuccess else palette.accentPrimary.copy(alpha = 0.75f),
+                        RectangleShape,
+                      )
+                      .padding(horizontal = 8.dp, vertical = 6.dp),
+                  horizontalArrangement = Arrangement.SpaceBetween,
+                  verticalAlignment = Alignment.CenterVertically,
+                ) {
+                  GlyphWordTile(
+                    wordId = "n_signal",
+                    grid = data.glyphs["n_signal"],
+                    wordDef = data.words["n_signal"],
+                    entry = uiState.dictionary["n_signal"],
+                    language = uiState.language,
+                    onClick = { onWordClick("n_signal") },
+                    compact = true,
+                  )
+                  Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                      levelDef.tickerSequence.forEachIndexed { idx, _ ->
+                        val active = idx == levelState.tickerIndex
+                        Box(
+                          modifier =
+                            Modifier
+                              .size(7.dp)
+                              .background(
+                                if (active) palette.accentPrimary else palette.lampOff,
+                                RectangleShape,
+                              ),
+                        )
+                      }
+                    }
+                    Box(
+                      contentAlignment = Alignment.Center,
+                      modifier =
+                        Modifier
+                          .size(44.dp)
+                          .background(palette.panelSunken, RectangleShape)
+                          .border(
+                            1.5.dp,
+                            if (levelState.isCleared) palette.statusSuccess else palette.accentPrimary,
+                            RectangleShape,
+                          )
+                          .semantics { contentDescription = "ticker_digit_${levelState.tickerDigit}" },
+                    ) {
+                      PixelGlyph(
+                        grid = data.glyphs[digitId],
+                        size = 28.dp,
+                        color = if (levelState.isCleared) palette.statusSuccess else palette.accentPrimary,
+                      )
+                    }
+                  }
+                }
+              }
+
               if (levelState.primaryMessage.isNotEmpty()) {
                 GlyphSentenceRow(
                   slots = levelState.primaryMessage,
@@ -236,44 +329,80 @@ fun LevelScreen(
               }
             }
 
-            // Engraved Instruction Plates
-            levelDef.plates.forEachIndexed { idx, plateSlots ->
-              val stepDone =
-                levelDef.sequenceSteps.isNotEmpty() &&
-                  (idx < levelState.seqStep || levelState.isCleared)
-              Box(
-                modifier =
-                  Modifier
-                    .fillMaxWidth()
-                    .background(
-                      if (stepDone) palette.statusSuccess.copy(alpha = 0.1f)
-                      else palette.tile.copy(alpha = 0.72f),
-                      RectangleShape,
-                    )
-                    .border(
-                      1.5.dp,
-                      if (stepDone) palette.statusSuccess else palette.border,
-                      RectangleShape,
-                    )
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            // Engraved Instruction Plates (or masked memory blanks if memoryMode && hasOperated)
+            val hidePlates = levelDef.memoryMode && levelState.hasOperated && !levelState.isCleared
+            if (hidePlates) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
               ) {
-                GlyphSentenceRow(
-                  slots = plateSlots,
-                  glyphs = data.glyphs,
-                  words = data.words,
-                  dictionary = uiState.dictionary,
+                GlyphWordTile(
+                  wordId = "v_hide",
+                  grid = data.glyphs["v_hide"],
+                  wordDef = data.words["v_hide"],
+                  entry = uiState.dictionary["v_hide"],
                   language = uiState.language,
-                  onWordClick = onWordClick,
+                  onClick = { onWordClick("v_hide") },
                   compact = true,
+                  glyphColor = palette.muted,
+                )
+                PixelActionButton(
+                  label = strings.memoryRevealButton,
+                  accent = palette.accentSecondary,
+                  onClick = { onTrigger("memory_reset") },
+                  modifier = Modifier.semantics { contentDescription = "memory_reveal_btn" },
                 )
               }
+              levelDef.plates.forEach { _ ->
+                Box(
+                  modifier =
+                    Modifier
+                      .fillMaxWidth()
+                      .height(34.dp)
+                      .background(palette.panelSunken, RectangleShape)
+                      .border(1.dp, palette.border.copy(alpha = 0.55f), RectangleShape),
+                )
+              }
+            } else {
+              levelDef.plates.forEachIndexed { idx, plateSlots ->
+                val stepDone =
+                  (levelDef.sequenceSteps.isNotEmpty() && (idx < levelState.seqStep || levelState.isCleared))
+                Box(
+                  modifier =
+                    Modifier
+                      .fillMaxWidth()
+                      .background(
+                        if (stepDone) palette.statusSuccess.copy(alpha = 0.1f)
+                        else palette.tile.copy(alpha = 0.72f),
+                        RectangleShape,
+                      )
+                      .border(
+                        1.5.dp,
+                        if (stepDone) palette.statusSuccess else palette.border,
+                        RectangleShape,
+                      )
+                      .padding(horizontal = 8.dp, vertical = 6.dp),
+                ) {
+                  GlyphSentenceRow(
+                    slots = plateSlots,
+                    glyphs = data.glyphs,
+                    words = data.words,
+                    dictionary = uiState.dictionary,
+                    language = uiState.language,
+                    onWordClick = onWordClick,
+                    compact = true,
+                  )
+                }
+              }
             }
+
             if (displayScroll.maxValue > 0) {
               Spacer(modifier = Modifier.height(22.dp))
             }
           }
 
-          // Vertical Pixel Scrollbar Track & Thumb (§7)
+          // Vertical Pixel Scrollbar Track & Thumb
           if (displayScroll.maxValue > 0) {
             val totalContent = viewportHeightPx + displayScroll.maxValue.toFloat()
             Canvas(
@@ -298,7 +427,7 @@ fun LevelScreen(
             }
           }
 
-          // Downward Continuation Arrow Indicator (§7)
+          // Downward Continuation Arrow Indicator
           if (displayScroll.canScrollForward) {
             Box(
               contentAlignment = Alignment.Center,
@@ -319,8 +448,8 @@ fun LevelScreen(
               Text(
                 text = "▼",
                 color = palette.accentPrimary,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
+                fontFamily = DotGothic16FontFamily,
+                fontWeight = FontWeight.Normal,
                 fontSize = 11.sp,
               )
             }
@@ -329,7 +458,7 @@ fun LevelScreen(
       }
     }
 
-    // 3. Lower Half: Unified Mechanical Control Deck (§4, §5)
+    // 3. Lower Half: Unified Mechanical Control Deck
     ControlDeckPanel(
       levelDef = levelDef,
       levelState = levelState,
@@ -339,12 +468,8 @@ fun LevelScreen(
       language = uiState.language,
       nextLabel = strings.nextLevel,
       onWordClick = onWordClick,
-      onTrigger = { trig ->
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-        onTrigger(trig)
-      },
+      onTrigger = onTrigger,
       onNextAction = {
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         if (nextLevelExists) {
           onOpenNextLevel(levelState.boardId, levelState.levelNumber + 1)
         } else {
@@ -369,13 +494,14 @@ private fun ControlDeckPanel(
   onNextAction: () -> Unit,
 ) {
   val palette = KidouTheme.palette
-  val primaryControls = listOf("button", "hold_button", "dual_button")
+  val primaryControls = listOf("button", "hold_button", "dual_button", "order_pad")
   val hasPrimary = levelDef.unlockedControls.any { it in primaryControls }
   val primaryType = levelDef.unlockedControls.firstOrNull { it in primaryControls } ?: "button"
   val toggles =
     levelDef.unlockedControls.filter {
-      it in listOf("sw_a", "sw_b", "sw_c", "lever", "key", "conduit", "lock")
+      it in listOf("sw_a", "sw_b", "sw_c", "sw_d", "lever", "key", "conduit", "lock")
     }
+  val hasRoute = "route" in levelDef.unlockedControls
   val hasSlider = "slider" in levelDef.unlockedControls
   val numerics = levelDef.unlockedControls.filter { it in listOf("dial", "valve") }
   val deckScroll = rememberScrollState()
@@ -386,7 +512,7 @@ private fun ControlDeckPanel(
     modifier = Modifier.fillMaxWidth(),
   ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-      if (toggles.isNotEmpty() || hasSlider || numerics.isNotEmpty()) {
+      if (toggles.isNotEmpty() || hasRoute || hasSlider || numerics.isNotEmpty()) {
         Column(
           modifier =
             Modifier
@@ -420,6 +546,18 @@ private fun ControlDeckPanel(
             }
           }
 
+          if (hasRoute) {
+            UnifiedRouteModule(
+              currentRoute = levelState.route,
+              glyphs = glyphs,
+              words = words,
+              dictionary = dictionary,
+              language = language,
+              onWordClick = onWordClick,
+              onTrigger = onTrigger,
+            )
+          }
+
           if (hasSlider) {
             UnifiedSliderModule(
               sliderValue = levelState.slider,
@@ -447,7 +585,7 @@ private fun ControlDeckPanel(
         }
       }
 
-      // Primary Action Area (§4: Transforms into Next button once cleared!)
+      // Primary Action Area
       if (hasPrimary || levelState.isCleared) {
         if (levelState.isCleared) {
           NextLevelActionRow(
@@ -479,6 +617,15 @@ private fun ControlDeckPanel(
                 onWordClick = onWordClick,
                 onTrigger = onTrigger,
               )
+            "order_pad" ->
+              UnifiedOrderPadRow(
+                glyphs = glyphs,
+                words = words,
+                dictionary = dictionary,
+                language = language,
+                onWordClick = onWordClick,
+                onTrigger = onTrigger,
+              )
             else ->
               UnifiedPushButtonRow(
                 glyphs = glyphs,
@@ -495,7 +642,6 @@ private fun ControlDeckPanel(
   }
 }
 
-/** §5: Left = part-type glyph(s), Right = large interactive button with live changing state glyph. */
 @Composable
 private fun UnifiedToggleModule(
   control: String,
@@ -531,6 +677,12 @@ private fun UnifiedToggleModule(
       stateWordId = if (state.swC) "v_activate" else "v_stop"
       triggerName = "sw_c_toggle"
       activeTint = if (state.swC) palette.accentPrimary else palette.muted
+    }
+    "sw_d" -> {
+      leftIds = listOf("n_switch", "d_4")
+      stateWordId = if (state.swD) "v_activate" else "v_stop"
+      triggerName = "sw_d_toggle"
+      activeTint = if (state.swD) palette.accentPrimary else palette.muted
     }
     "lever" -> {
       leftIds = listOf("n_lever")
@@ -606,6 +758,131 @@ private fun UnifiedToggleModule(
 }
 
 @Composable
+private fun UnifiedRouteModule(
+  currentRoute: Int,
+  glyphs: Map<String, GlyphGrid>,
+  words: Map<String, WordDef>,
+  dictionary: Map<String, DictionaryEntry>,
+  language: AppLanguage,
+  onWordClick: (String) -> Unit,
+  onTrigger: (String) -> Unit,
+) {
+  val palette = KidouTheme.palette
+  Row(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .background(palette.panelSunken, RectangleShape)
+        .border(1.5.dp, palette.border, RectangleShape)
+        .padding(5.dp),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    GlyphWordTile(
+      wordId = "n_route",
+      grid = glyphs["n_route"],
+      wordDef = words["n_route"],
+      entry = dictionary["n_route"],
+      language = language,
+      onClick = { onWordClick("n_route") },
+      compact = true,
+    )
+    Row(
+      modifier = Modifier.weight(1f),
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+      for (r in 1..3) {
+        val selected = currentRoute == r
+        val tint = if (selected) palette.accentSecondary else palette.muted
+        val digitWordId = "d_$r"
+        PixelBevelPad(
+          borderColor = tint,
+          fillColor = if (selected) tint.copy(alpha = 0.22f) else palette.tile,
+          onClick = { onTrigger("route_$r") },
+          modifier =
+            Modifier
+              .weight(1f)
+              .height(44.dp)
+              .semantics { contentDescription = "control_route_$r" },
+        ) {
+          EmbeddedGlyphWithRuby(
+            wordId = digitWordId,
+            grid = glyphs[digitIdOrFallback(digitWordId)],
+            wordDef = words[digitWordId],
+            entry = dictionary[digitWordId],
+            language = language,
+            glyphColor = tint,
+            glyphSize = 18.dp,
+          )
+        }
+      }
+    }
+  }
+}
+
+private fun digitIdOrFallback(id: String): String = id
+
+@Composable
+private fun UnifiedOrderPadRow(
+  glyphs: Map<String, GlyphGrid>,
+  words: Map<String, WordDef>,
+  dictionary: Map<String, DictionaryEntry>,
+  language: AppLanguage,
+  onWordClick: (String) -> Unit,
+  onTrigger: (String) -> Unit,
+) {
+  val palette = KidouTheme.palette
+  Row(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .background(palette.panelSunken, RectangleShape)
+        .border(1.5.dp, palette.border, RectangleShape)
+        .padding(6.dp),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    GlyphWordTile(
+      wordId = "n_button",
+      grid = glyphs["n_button"],
+      wordDef = words["n_button"],
+      entry = dictionary["n_button"],
+      language = language,
+      onClick = { onWordClick("n_button") },
+      compact = true,
+    )
+    Row(
+      modifier = Modifier.weight(1f),
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+      for (i in 1..4) {
+        val digitWordId = "d_$i"
+        PixelBevelPad(
+          borderColor = palette.accentPrimary,
+          fillColor = palette.accentPrimary.copy(alpha = 0.16f),
+          onClick = { onTrigger("order_$i") },
+          modifier =
+            Modifier
+              .weight(1f)
+              .height(50.dp)
+              .semantics { contentDescription = "control_order_$i" },
+        ) {
+          EmbeddedGlyphWithRuby(
+            wordId = digitWordId,
+            grid = glyphs[digitWordId],
+            wordDef = words[digitWordId],
+            entry = dictionary[digitWordId],
+            language = language,
+            glyphColor = palette.accentPrimary,
+            glyphSize = 20.dp,
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
 private fun UnifiedSliderModule(
   sliderValue: String,
   glyphs: Map<String, GlyphGrid>,
@@ -616,10 +893,12 @@ private fun UnifiedSliderModule(
   onTrigger: (String) -> Unit,
 ) {
   val palette = KidouTheme.palette
+  val hapticClick = rememberKidouHapticClick()
   val isRight = sliderValue == "right"
   val dirWordId = if (isRight) "v_right" else "v_left"
   val tint = if (isRight) palette.statusSuccess else palette.accentSecondary
   var dragAccum by remember { mutableFloatStateOf(0f) }
+  var isSliding by remember { mutableStateOf(false) }
 
   Row(
     modifier =
@@ -644,6 +923,7 @@ private fun UnifiedSliderModule(
     PixelBevelPad(
       borderColor = tint,
       fillColor = tint.copy(alpha = 0.14f),
+      pressed = isSliding,
       modifier =
         Modifier
           .weight(1f)
@@ -651,12 +931,21 @@ private fun UnifiedSliderModule(
           .semantics { contentDescription = "control_slider" }
           .pointerInput(sliderValue) {
             detectHorizontalDragGestures(
-              onDragStart = { dragAccum = 0f },
+              onDragStart = {
+                isSliding = true
+                dragAccum = 0f
+              },
               onHorizontalDrag = { _, dragAmount ->
                 dragAccum += dragAmount
               },
+              onDragCancel = {
+                isSliding = false
+                dragAccum = 0f
+              },
               onDragEnd = {
+                isSliding = false
                 if (abs(dragAccum) > 24f) {
+                  hapticClick()
                   onTrigger(if (dragAccum > 0f) "slider_right" else "slider_left")
                 }
                 dragAccum = 0f
@@ -664,9 +953,17 @@ private fun UnifiedSliderModule(
             )
           }
           .pointerInput(sliderValue) {
-            detectTapGestures {
-              onTrigger(if (isRight) "slider_left" else "slider_right")
-            }
+            detectTapGestures(
+              onPress = {
+                isSliding = true
+                tryAwaitRelease()
+                isSliding = false
+              },
+              onTap = {
+                hapticClick()
+                onTrigger(if (isRight) "slider_left" else "slider_right")
+              },
+            )
           },
     ) {
       Row(
@@ -735,6 +1032,7 @@ private fun UnifiedNumericModule(
   val decTrig = if (control == "dial") "dial_dec" else "valve_dec"
   val incTrig = if (control == "dial") "dial_inc" else "valve_inc"
   val inc5Trig = if (control == "dial") "dial_inc5" else "valve_inc5"
+  val invertedFg = if (palette.isDark) palette.background else palette.tile
 
   Row(
     modifier =
@@ -769,10 +1067,10 @@ private fun UnifiedNumericModule(
             .size(width = 40.dp, height = 44.dp)
             .semantics { contentDescription = "${control}_dec" },
       ) {
-        Text("-", color = palette.accentSecondary, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        val fg = if (LocalPadPressed.current) invertedFg else palette.accentSecondary
+        Text("-", color = fg, fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal, fontSize = 17.sp)
       }
 
-      // Embedded Base-5 Readout inside numeric control bar
       Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -797,7 +1095,8 @@ private fun UnifiedNumericModule(
             .size(width = 40.dp, height = 44.dp)
             .semantics { contentDescription = "${control}_inc" },
       ) {
-        Text("+", color = palette.accentPrimary, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        val fg = if (LocalPadPressed.current) invertedFg else palette.accentPrimary
+        Text("+", color = fg, fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal, fontSize = 17.sp)
       }
 
       PixelBevelPad(
@@ -808,10 +1107,11 @@ private fun UnifiedNumericModule(
             .size(width = 46.dp, height = 44.dp)
             .semantics { contentDescription = "${control}_inc5" },
       ) {
+        val fg = if (LocalPadPressed.current) invertedFg else palette.statusSuccess
         Row(verticalAlignment = Alignment.CenterVertically) {
-          Text("+", color = palette.statusSuccess, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-          PixelGlyph(grid = glyphs["d_1"], size = 9.dp, color = palette.statusSuccess)
-          PixelGlyph(grid = glyphs["d_0"], size = 9.dp, color = palette.statusSuccess)
+          Text("+", color = fg, fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal, fontSize = 13.sp)
+          PixelGlyph(grid = glyphs["d_1"], size = 9.dp, color = fg)
+          PixelGlyph(grid = glyphs["d_0"], size = 9.dp, color = fg)
         }
       }
     }
@@ -919,14 +1219,14 @@ private fun UnifiedHoldButtonRow(
       compact = true,
     )
 
-    Box(
-      contentAlignment = Alignment.Center,
+    PixelBevelPad(
+      borderColor = palette.accentPrimary,
+      fillColor = palette.accentPrimary.copy(alpha = 0.16f),
+      pressed = holding,
       modifier =
         Modifier
           .weight(1f)
           .height(50.dp)
-          .background(palette.accentPrimary.copy(alpha = 0.16f), RectangleShape)
-          .border(2.dp, palette.accentPrimary, RectangleShape)
           .semantics { contentDescription = "control_hold_button" }
           .pointerInput(Unit) {
             detectTapGestures(
@@ -983,7 +1283,6 @@ private fun UnifiedDualButtonRow(
   var chordFired by remember { mutableStateOf(false) }
 
   fun checkChord() {
-    val now = System.currentTimeMillis()
     val multiDown = pad1Down && pad2Down
     val quickChord =
       pad1TapTime > 0L && pad2TapTime > 0L && abs(pad1TapTime - pad2TapTime) <= 650L
@@ -1035,6 +1334,7 @@ private fun UnifiedDualButtonRow(
         fillColor =
           if (pad1Down) palette.statusSuccess.copy(alpha = 0.25f)
           else palette.accentPrimary.copy(alpha = 0.16f),
+        pressed = pad1Down,
         modifier =
           Modifier
             .weight(1f)
@@ -1069,6 +1369,7 @@ private fun UnifiedDualButtonRow(
         fillColor =
           if (pad2Down) palette.statusSuccess.copy(alpha = 0.25f)
           else palette.accentPrimary.copy(alpha = 0.16f),
+        pressed = pad2Down,
         modifier =
           Modifier
             .weight(1f)
@@ -1112,6 +1413,7 @@ private fun NextLevelActionRow(
   onNext: () -> Unit,
 ) {
   val palette = KidouTheme.palette
+  val invertedFg = if (palette.isDark) palette.background else palette.tile
   Row(
     modifier =
       Modifier
@@ -1143,16 +1445,17 @@ private fun NextLevelActionRow(
           .height(50.dp)
           .semantics { contentDescription = "control_next" },
     ) {
+      val fg = if (LocalPadPressed.current) invertedFg else palette.statusSuccess
       Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
-        PixelGlyph(grid = glyphs["m_next"], size = 20.dp, color = palette.statusSuccess)
+        PixelGlyph(grid = glyphs["m_next"], size = 20.dp, color = fg)
         Text(
           text = nextLabel,
-          color = palette.statusSuccess,
-          fontFamily = FontFamily.Monospace,
-          fontWeight = FontWeight.Bold,
+          color = fg,
+          fontFamily = DotGothic16FontFamily,
+          fontWeight = FontWeight.Normal,
           fontSize = 15.sp,
           letterSpacing = 1.5.sp,
         )

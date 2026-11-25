@@ -9,6 +9,7 @@ import com.kidou.game.ads.RewardedAdManager
 import com.kidou.game.audio.BgmPlayer
 import com.kidou.game.audio.SoundSynth
 import com.kidou.game.data.SaveRepository
+import com.kidou.game.engine.Base5
 import com.kidou.game.engine.GameDataLoader
 import com.kidou.game.engine.LevelEngine
 import com.kidou.game.model.AppLanguage
@@ -57,6 +58,7 @@ data class GameUiState(
   val operationLog: List<OperationLogEntry> = emptyList(),
   val soundEnabled: Boolean = true,
   val bgmEnabled: Boolean = true,
+  val hapticsEnabled: Boolean = true,
   val language: AppLanguage = AppLanguage.JA,
   val themeMode: ThemeMode = ThemeMode.DARK,
   val colorTheme: ColorTheme = ColorTheme.AMBER_RUIN,
@@ -82,6 +84,12 @@ data class GameUiState(
   val board2Clears: Int
     get() = LevelEngine.countBoardClears(2, clearedLevelKeys)
 
+  val board3Clears: Int
+    get() = LevelEngine.countBoardClears(3, clearedLevelKeys)
+
+  val board4Clears: Int
+    get() = LevelEngine.countBoardClears(4, clearedLevelKeys)
+
   val isBoard2Unlocked: Boolean
     get() {
       val board2 = gameData?.boardCollection?.boards?.firstOrNull { it.id == 2 } ?: return false
@@ -92,6 +100,18 @@ data class GameUiState(
     get() {
       val board3 = gameData?.boardCollection?.boards?.firstOrNull { it.id == 3 } ?: return false
       return LevelEngine.isBoardUnlocked(board3, clearedLevelKeys)
+    }
+
+  val isBoard4Unlocked: Boolean
+    get() {
+      val board4 = gameData?.boardCollection?.boards?.firstOrNull { it.id == 4 } ?: return false
+      return LevelEngine.isBoardUnlocked(board4, clearedLevelKeys)
+    }
+
+  val isBoard5Unlocked: Boolean
+    get() {
+      val board5 = gameData?.boardCollection?.boards?.firstOrNull { it.id == 5 } ?: return false
+      return LevelEngine.isBoardUnlocked(board5, clearedLevelKeys)
     }
 }
 
@@ -149,6 +169,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       operationLog = logs,
       soundEnabled = saved?.soundEnabled ?: true,
       bgmEnabled = saved?.bgmEnabled ?: true,
+      hapticsEnabled = saved?.hapticsEnabled ?: true,
       language = language,
       themeMode = saved?.themeMode ?: ThemeMode.DARK,
       colorTheme = saved?.colorTheme ?: ColorTheme.AMBER_RUIN,
@@ -432,6 +453,25 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     _uiState.update { it.copy(showGuide = false) }
   }
 
+  fun tickActiveLevelTicker() {
+    val state = _uiState.value
+    val levelState = state.activeLevelState ?: return
+    val boardDef = gameData.boardCollection.boardById(levelState.boardId)
+    val levelDef = boardDef.levelByNumber(levelState.levelNumber) ?: return
+    if (!levelDef.tickerEnabled || levelState.isCleared) return
+    val nextLevelState = LevelEngine.advanceTicker(levelDef, levelState)
+    if (nextLevelState != levelState) {
+      val digitWord = Base5.toDigitWordIds(nextLevelState.tickerDigit)
+      _uiState.update {
+        it.copy(
+          activeLevelState = nextLevelState,
+          discoveredWordIds = it.discoveredWordIds + digitWord,
+          screenWordIds = (it.screenWordIds + digitWord).distinct(),
+        )
+      }
+    }
+  }
+
   fun setSoundEnabled(enabled: Boolean) {
     _uiState.update { it.copy(soundEnabled = enabled) }
     persist()
@@ -440,6 +480,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   fun setBgmEnabled(enabled: Boolean) {
     bgmPlayer.setEnabled(enabled)
     _uiState.update { it.copy(bgmEnabled = enabled) }
+    persist()
+  }
+
+  fun setHapticsEnabled(enabled: Boolean) {
+    _uiState.update { it.copy(hapticsEnabled = enabled) }
     persist()
   }
 
@@ -502,6 +547,27 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     val b2Keys = (1..19).map { LevelEngine.levelKey(2, it) }
     _uiState.update { current ->
       current.copy(clearedLevelKeys = current.clearedLevelKeys + b1Keys + b2Keys)
+    }
+    persist()
+  }
+
+  fun debugFill19ClearsForBoard3() {
+    val b1Keys = (1..25).map { LevelEngine.levelKey(1, it) }
+    val b2Keys = (1..25).map { LevelEngine.levelKey(2, it) }
+    val b3Keys = (1..19).map { LevelEngine.levelKey(3, it) }
+    _uiState.update { current ->
+      current.copy(clearedLevelKeys = current.clearedLevelKeys + b1Keys + b2Keys + b3Keys)
+    }
+    persist()
+  }
+
+  fun debugFill19ClearsForBoard4() {
+    val b1Keys = (1..25).map { LevelEngine.levelKey(1, it) }
+    val b2Keys = (1..25).map { LevelEngine.levelKey(2, it) }
+    val b3Keys = (1..25).map { LevelEngine.levelKey(3, it) }
+    val b4Keys = (1..19).map { LevelEngine.levelKey(4, it) }
+    _uiState.update { current ->
+      current.copy(clearedLevelKeys = current.clearedLevelKeys + b1Keys + b2Keys + b3Keys + b4Keys)
     }
     persist()
   }
@@ -575,6 +641,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         operationLog = state.operationLog,
         soundEnabled = state.soundEnabled,
         bgmEnabled = state.bgmEnabled,
+        hapticsEnabled = state.hapticsEnabled,
         language = state.language,
         themeMode = state.themeMode,
         colorTheme = state.colorTheme,

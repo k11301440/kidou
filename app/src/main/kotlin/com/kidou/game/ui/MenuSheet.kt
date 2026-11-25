@@ -3,6 +3,8 @@ package com.kidou.game.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -30,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,7 +45,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,8 +53,10 @@ import com.kidou.game.config.AppConfig
 import com.kidou.game.model.AppLanguage
 import com.kidou.game.model.LampState
 import com.kidou.game.ui.components.PixelDivider
+import com.kidou.game.ui.components.rememberKidouHapticClick
 import com.kidou.game.ui.i18n.stringsFor
 import com.kidou.game.ui.theme.ColorTheme
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouPalette
 import com.kidou.game.ui.theme.KidouTheme
 import com.kidou.game.ui.theme.ThemeMode
@@ -65,6 +70,7 @@ fun MenuSheet(
   onSelectTab: (MenuTab) -> Unit,
   onToggleBgm: (Boolean) -> Unit,
   onToggleSound: (Boolean) -> Unit,
+  onToggleHaptics: (Boolean) -> Unit,
   onSelectLanguage: (AppLanguage) -> Unit,
   onSelectThemeMode: (ThemeMode) -> Unit,
   onSelectColorTheme: (ColorTheme) -> Unit,
@@ -72,6 +78,8 @@ fun MenuSheet(
   onDebugResetTranslations: () -> Unit,
   onDebugFill19ClearsBoard1: () -> Unit,
   onDebugFill19ClearsBoard2: () -> Unit,
+  onDebugFill19ClearsBoard3: () -> Unit,
+  onDebugFill19ClearsBoard4: () -> Unit,
   onResetAll: () -> Unit,
   onDismiss: () -> Unit,
 ) {
@@ -80,6 +88,7 @@ fun MenuSheet(
   val strings = stringsFor(uiState.language)
   val stats = uiState.translationStats
   val uriHandler = LocalUriHandler.current
+  val hapticClick = rememberKidouHapticClick()
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var showResetConfirm by remember { mutableStateOf(false) }
 
@@ -100,13 +109,12 @@ fun MenuSheet(
     ) {
       Text(
         text = strings.menu,
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
+        fontFamily = DotGothic16FontFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = 19.sp,
         color = palette.glyph,
       )
 
-      // §3: Strictly Progress & Settings (Operation Log removed)
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -141,6 +149,16 @@ fun MenuSheet(
               strings.board3StatusLabel,
               if (uiState.isBoard3Unlocked) strings.unlocked else strings.locked,
             )
+            StatRow(strings.board3ClearsLabel, "${uiState.board3Clears} / 25")
+            StatRow(
+              strings.board4StatusLabel,
+              if (uiState.isBoard4Unlocked) strings.unlocked else strings.locked,
+            )
+            StatRow(strings.board4ClearsLabel, "${uiState.board4Clears} / 25")
+            StatRow(
+              strings.board5StatusLabel,
+              if (uiState.isBoard5Unlocked) strings.unlocked else strings.locked,
+            )
             StatRow(
               strings.discoveredWordsLabel,
               "${uiState.discoveredWordIds.size} / ${data.wordOrder.size}",
@@ -161,15 +179,31 @@ fun MenuSheet(
             ToggleSettingRow(
               label = strings.bgmLabel,
               checked = uiState.bgmEnabled,
-              onCheckedChange = onToggleBgm,
+              onCheckedChange = {
+                hapticClick()
+                onToggleBgm(it)
+              },
               contentDesc = "switch_bgm",
             )
 
             ToggleSettingRow(
               label = strings.sfxLabel,
               checked = uiState.soundEnabled,
-              onCheckedChange = onToggleSound,
+              onCheckedChange = {
+                hapticClick()
+                onToggleSound(it)
+              },
               contentDesc = "switch_sfx",
+            )
+
+            ToggleSettingRow(
+              label = strings.hapticsLabel,
+              checked = uiState.hapticsEnabled,
+              onCheckedChange = {
+                hapticClick()
+                onToggleHaptics(it)
+              },
+              contentDesc = "switch_haptics",
             )
 
             // Language Switch
@@ -184,7 +218,7 @@ fun MenuSheet(
             ) {
               Text(
                 text = strings.languageLabel,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = DotGothic16FontFamily,
                 color = palette.glyph,
                 fontSize = 13.sp,
               )
@@ -204,7 +238,7 @@ fun MenuSheet(
               }
             }
 
-            // §8: Theme Mode (Dark / Light) + Color Theme Selector
+            // Theme Mode & Simplified Color Theme Selector
             Column(
               modifier =
                 Modifier
@@ -216,7 +250,7 @@ fun MenuSheet(
             ) {
               Text(
                 text = strings.themeModeLabel,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = DotGothic16FontFamily,
                 color = palette.glyph,
                 fontSize = 13.sp,
               )
@@ -237,7 +271,7 @@ fun MenuSheet(
 
               Text(
                 text = strings.colorThemeLabel,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = DotGothic16FontFamily,
                 color = palette.glyph,
                 fontSize = 13.sp,
               )
@@ -248,38 +282,58 @@ fun MenuSheet(
                 ColorTheme.entries.forEach { ct ->
                   val selected = uiState.colorTheme == ct
                   val swatchColor = Color(ct.swatchHex)
+                  val interaction = remember(ct) { MutableInteractionSource() }
+                  val pressed by interaction.collectIsPressedAsState()
+                  LaunchedEffect(pressed) {
+                    if (pressed) hapticClick()
+                  }
+                  val invertedFg = if (palette.isDark) palette.background else palette.tile
                   Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier =
                       Modifier
+                        .offset(y = if (pressed) 1.dp else 0.dp)
                         .background(
-                          if (selected) palette.accentPrimary.copy(alpha = 0.16f) else palette.panelSunken,
+                          when {
+                            pressed -> palette.accentPrimary
+                            selected -> palette.accentPrimary.copy(alpha = 0.16f)
+                            else -> palette.panelSunken
+                          },
                           RectangleShape,
                         )
                         .border(
-                          if (selected) 1.5.dp else 1.dp,
-                          if (selected) palette.accentPrimary else palette.border,
+                          if (selected || pressed) 1.5.dp else 1.dp,
+                          if (selected || pressed) palette.accentPrimary else palette.border,
                           RectangleShape,
                         )
                         .semantics { contentDescription = "color_theme_${ct.name.lowercase()}" }
-                        .clickable { onSelectColorTheme(ct) }
+                        .clickable(
+                          interactionSource = interaction,
+                          indication = null,
+                          onClick = { onSelectColorTheme(ct) },
+                        )
                         .padding(horizontal = 10.dp, vertical = 7.dp),
                   ) {
                     Box(modifier = Modifier.size(10.dp).background(swatchColor))
                     Text(
                       text = ct.label(uiState.language),
-                      color = if (selected) palette.accentPrimary else palette.glyph,
-                      fontFamily = FontFamily.Monospace,
-                      fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                      fontSize = 11.sp,
+                      color =
+                        when {
+                          pressed -> invertedFg
+                          selected -> palette.accentPrimary
+                          else -> palette.glyph
+                        },
+                      fontFamily = DotGothic16FontFamily,
+                      fontWeight = FontWeight.Normal,
+                      fontSize = 12.sp,
                     )
                   }
                 }
               }
             }
 
-            // §3: Privacy Policy Link (single constant URL in AppConfig)
+            // Privacy Policy Link
             Row(
               modifier =
                 Modifier
@@ -287,7 +341,10 @@ fun MenuSheet(
                   .background(palette.tile, RectangleShape)
                   .border(1.dp, palette.border, RectangleShape)
                   .semantics { contentDescription = "privacy_policy_link" }
-                  .clickable { runCatching { uriHandler.openUri(AppConfig.PRIVACY_POLICY_URL) } }
+                  .clickable {
+                    hapticClick()
+                    runCatching { uriHandler.openUri(AppConfig.PRIVACY_POLICY_URL) }
+                  }
                   .padding(horizontal = 14.dp, vertical = 12.dp),
               horizontalArrangement = Arrangement.spacedBy(12.dp),
               verticalAlignment = Alignment.CenterVertically,
@@ -298,14 +355,14 @@ fun MenuSheet(
               ) {
                 Text(
                   text = strings.privacyPolicyLabel,
-                  fontFamily = FontFamily.Monospace,
+                  fontFamily = DotGothic16FontFamily,
                   color = palette.glyph,
-                  fontWeight = FontWeight.Bold,
+                  fontWeight = FontWeight.Normal,
                   fontSize = 13.sp,
                 )
                 Text(
                   text = AppConfig.PRIVACY_POLICY_URL,
-                  fontFamily = FontFamily.Monospace,
+                  fontFamily = DotGothic16FontFamily,
                   color = palette.muted,
                   fontSize = 10.sp,
                   maxLines = 1,
@@ -314,16 +371,16 @@ fun MenuSheet(
               }
               Text(
                 text = strings.privacyPolicyHint,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = DotGothic16FontFamily,
                 color = palette.accentSecondary,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Normal,
                 fontSize = 11.sp,
                 maxLines = 1,
                 softWrap = false,
               )
             }
 
-            // Credits (CC BY 4.0 required attribution)
+            // Credits (CC BY 4.0 Audio & OFL 1.1 Font attribution)
             Column(
               modifier =
                 Modifier
@@ -336,21 +393,25 @@ fun MenuSheet(
               Text(
                 text = strings.creditsHeader,
                 color = palette.accentPrimary,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
+                fontFamily = DotGothic16FontFamily,
+                fontWeight = FontWeight.Normal,
                 fontSize = 12.sp,
               )
               Text(
                 text = strings.creditsBody,
                 color = palette.muted,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = DotGothic16FontFamily,
+                fontWeight = FontWeight.Normal,
                 fontSize = 11.sp,
                 lineHeight = 16.sp,
               )
             }
 
             Button(
-              onClick = { showResetConfirm = true },
+              onClick = {
+                hapticClick()
+                showResetConfirm = true
+              },
               shape = RectangleShape,
               colors =
                 ButtonDefaults.buttonColors(
@@ -362,7 +423,7 @@ fun MenuSheet(
                   .fillMaxWidth()
                   .border(1.dp, palette.statusDanger.copy(alpha = 0.6f), RectangleShape),
             ) {
-              Text(strings.resetAllButton, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+              Text(strings.resetAllButton, fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal)
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -381,37 +442,51 @@ fun MenuSheet(
               Text(
                 text = strings.debugSectionHeader,
                 color = palette.muted,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
+                fontFamily = DotGothic16FontFamily,
+                fontWeight = FontWeight.Normal,
                 fontSize = 11.sp,
               )
               OutlinedButton(
-                onClick = onDebugBulkApply,
+                onClick = { hapticClick(); onDebugBulkApply() },
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_bulk_apply" },
               ) {
-                Text(strings.debugBulkApply, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = palette.accentSecondary)
+                Text(strings.debugBulkApply, fontFamily = DotGothic16FontFamily, fontSize = 11.sp, color = palette.accentSecondary)
               }
               OutlinedButton(
-                onClick = onDebugResetTranslations,
+                onClick = { hapticClick(); onDebugResetTranslations() },
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_reset_trans" },
               ) {
-                Text(strings.debugResetTranslations, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = palette.accentPrimary)
+                Text(strings.debugResetTranslations, fontFamily = DotGothic16FontFamily, fontSize = 11.sp, color = palette.accentPrimary)
               }
               OutlinedButton(
-                onClick = onDebugFill19ClearsBoard1,
+                onClick = { hapticClick(); onDebugFill19ClearsBoard1() },
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_fill_19" },
               ) {
-                Text(strings.debugFill19ClearsBoard1, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = palette.statusSuccess)
+                Text(strings.debugFill19ClearsBoard1, fontFamily = DotGothic16FontFamily, fontSize = 11.sp, color = palette.statusSuccess)
               }
               OutlinedButton(
-                onClick = onDebugFill19ClearsBoard2,
+                onClick = { hapticClick(); onDebugFill19ClearsBoard2() },
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_fill_19_b2" },
               ) {
-                Text(strings.debugFill19ClearsBoard2, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = palette.statusSuccess)
+                Text(strings.debugFill19ClearsBoard2, fontFamily = DotGothic16FontFamily, fontSize = 11.sp, color = palette.statusSuccess)
+              }
+              OutlinedButton(
+                onClick = { hapticClick(); onDebugFill19ClearsBoard3() },
+                shape = RectangleShape,
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_fill_19_b3" },
+              ) {
+                Text(strings.debugFill19ClearsBoard3, fontFamily = DotGothic16FontFamily, fontSize = 11.sp, color = palette.statusSuccess)
+              }
+              OutlinedButton(
+                onClick = { hapticClick(); onDebugFill19ClearsBoard4() },
+                shape = RectangleShape,
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_fill_19_b4" },
+              ) {
+                Text(strings.debugFill19ClearsBoard4, fontFamily = DotGothic16FontFamily, fontSize = 11.sp, color = palette.statusSuccess)
               }
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -428,23 +503,24 @@ fun MenuSheet(
       titleContentColor = palette.glyph,
       textContentColor = palette.muted,
       shape = RectangleShape,
-      title = { Text(strings.resetConfirmTitle, fontFamily = FontFamily.Monospace) },
+      title = { Text(strings.resetConfirmTitle, fontFamily = DotGothic16FontFamily) },
       text = {
-        Text(strings.resetConfirmBody, fontFamily = FontFamily.Monospace, fontSize = 13.sp)
+        Text(strings.resetConfirmBody, fontFamily = DotGothic16FontFamily, fontSize = 13.sp)
       },
       confirmButton = {
         TextButton(
           onClick = {
+            hapticClick()
             showResetConfirm = false
             onResetAll()
           },
         ) {
-          Text(strings.confirmReset, color = palette.statusDanger, fontFamily = FontFamily.Monospace)
+          Text(strings.confirmReset, color = palette.statusDanger, fontFamily = DotGothic16FontFamily)
         }
       },
       dismissButton = {
-        TextButton(onClick = { showResetConfirm = false }) {
-          Text(strings.cancel, color = palette.muted, fontFamily = FontFamily.Monospace)
+        TextButton(onClick = { hapticClick(); showResetConfirm = false }) {
+          Text(strings.cancel, color = palette.muted, fontFamily = DotGothic16FontFamily)
         }
       },
     )
@@ -471,7 +547,7 @@ private fun ToggleSettingRow(
   ) {
     Text(
       text = label,
-      fontFamily = FontFamily.Monospace,
+      fontFamily = DotGothic16FontFamily,
       color = palette.glyph,
       fontSize = 13.sp,
     )
@@ -496,27 +572,49 @@ private fun MenuTabButton(
   modifier: Modifier = Modifier,
 ) {
   val palette = KidouTheme.palette
+  val hapticClick = rememberKidouHapticClick()
+  val interaction = remember { MutableInteractionSource() }
+  val pressed by interaction.collectIsPressedAsState()
+  LaunchedEffect(pressed) {
+    if (pressed) hapticClick()
+  }
+  val invertedFg = if (palette.isDark) palette.background else palette.tile
+
   Box(
     contentAlignment = Alignment.Center,
     modifier =
       modifier
+        .offset(y = if (pressed) 1.dp else 0.dp)
         .background(
-          if (selected) palette.accentSecondary.copy(alpha = 0.16f) else palette.panelSunken,
+          when {
+            pressed -> palette.accentSecondary
+            selected -> palette.accentSecondary.copy(alpha = 0.16f)
+            else -> palette.panelSunken
+          },
           RectangleShape,
         )
         .border(
           1.5.dp,
-          if (selected) palette.accentSecondary else palette.border,
+          if (selected || pressed) palette.accentSecondary else palette.border,
           RectangleShape,
         )
-        .clickable(onClick = onClick)
+        .clickable(
+          interactionSource = interaction,
+          indication = null,
+          onClick = onClick,
+        )
         .padding(vertical = 8.dp),
   ) {
     Text(
       text = label,
-      color = if (selected) palette.accentSecondary else palette.muted,
-      fontFamily = FontFamily.Monospace,
-      fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+      color =
+        when {
+          pressed -> invertedFg
+          selected -> palette.accentSecondary
+          else -> palette.muted
+        },
+      fontFamily = DotGothic16FontFamily,
+      fontWeight = FontWeight.Normal,
       fontSize = 12.sp,
     )
   }
@@ -534,12 +632,12 @@ private fun StatRow(label: String, value: String) {
         .padding(horizontal = 14.dp, vertical = 10.dp),
     horizontalArrangement = Arrangement.SpaceBetween,
   ) {
-    Text(text = label, color = palette.muted, fontFamily = FontFamily.Monospace, fontSize = 13.sp)
+    Text(text = label, color = palette.muted, fontFamily = DotGothic16FontFamily, fontSize = 13.sp)
     Text(
       text = value,
       color = palette.glyph,
-      fontFamily = FontFamily.Monospace,
-      fontWeight = FontWeight.Bold,
+      fontFamily = DotGothic16FontFamily,
+      fontWeight = FontWeight.Normal,
       fontSize = 13.sp,
     )
   }

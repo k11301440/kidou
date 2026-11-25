@@ -80,6 +80,10 @@ object GameDataLoader {
               (b.levels ?: emptyList()).map { l ->
                 val init = l.initialState ?: LevelInitialState()
                 val req = l.requirements
+                val normTickerSeq =
+                  (l.tickerSequence ?: emptyList()).ifEmpty {
+                    if (l.tickerEnabled) listOf(0, 1, 2, 3, 4) else emptyList()
+                  }
                 l.copy(
                   puzzleType = l.puzzleType ?: PuzzleType.CONDITION,
                   unlockedControls = l.unlockedControls ?: emptyList(),
@@ -90,6 +94,7 @@ object GameDataLoader {
                       key = init.key ?: "out",
                       conduit = init.conduit ?: "cut",
                       lock = init.lock ?: "locked",
+                      route = if (init.route in 1..3) init.route else 1,
                       slider = init.slider ?: "left",
                       lamp = init.lamp ?: "off",
                       primaryMessage = init.primaryMessage ?: emptyList(),
@@ -97,6 +102,8 @@ object GameDataLoader {
                     ),
                   requirements =
                     req?.copy(
+                      orderSequence = req.orderSequence ?: emptyList(),
+                      tickerTargets = req.tickerTargets ?: emptyList(),
                       logicClauses =
                         (req.logicClauses ?: emptyList()).map { clause ->
                           clause.copy(
@@ -116,6 +123,10 @@ object GameDataLoader {
                     },
                   completionPrimary = l.completionPrimary ?: emptyList(),
                   completionSecondary = l.completionSecondary ?: emptyList(),
+                  tickerIntervalMs = if (l.tickerIntervalMs <= 0L) 1100L else l.tickerIntervalMs,
+                  tickerSequence = normTickerSeq,
+                  switchLinks =
+                    (l.switchLinks ?: emptyMap()).mapValues { (_, v) -> v ?: emptyList() },
                 )
               },
           )

@@ -61,5 +61,13 @@
   { "id": "v_swipe", "glyphId": "v_swipe", "meaningJa": "なぞる", "meaningEn": "swipe", "pos": "verb", "morphemes": ["swipe"], "isDefaultSet": false },
   { "id": "m_together", "glyphId": "m_together", "meaningJa": "同時に", "meaningEn": "together", "pos": "modifier", "morphemes": ["together"], "isDefaultSet": false },
   { "id": "v_left", "glyphId": "v_left", "meaningJa": "左", "meaningEn": "left", "pos": "verb", "morphemes": ["dir", "left"], "isDefaultSet": false },
-  { "id": "v_right", "glyphId": "v_right", "meaningJa": "右", "meaningEn": "right", "pos": "verb", "morphemes": ["dir", "right"], "isDefaultSet": false }
+  { "id": "v_right", "glyphId": "v_right", "meaningJa": "右", "meaningEn": "right", "pos": "verb", "morphemes": ["dir", "right"], "isDefaultSet": false },
+  { "id": "m_first", "glyphId": "m_first", "meaningJa": "最初", "meaningEn": "first", "pos": "modifier", "morphemes": ["order", "first"], "isDefaultSet": false },
+  { "id": "m_last", "glyphId": "m_last", "meaningJa": "最後", "meaningEn": "last", "pos": "modifier", "morphemes": ["order", "last"], "isDefaultSet": false },
+  { "id": "m_after", "glyphId": "m_after", "meaningJa": "後", "meaningEn": "after", "pos": "modifier", "morphemes": ["order", "after"], "isDefaultSet": false },
+  { "id": "m_all", "glyphId": "m_all", "meaningJa": "すべて", "meaningEn": "all", "pos": "modifier", "morphemes": ["all"], "isDefaultSet": false },
+  { "id": "m_same", "glyphId": "m_same", "meaningJa": "同じ", "meaningEn": "same", "pos": "modifier", "morphemes": ["same"], "isDefaultSet": false },
+  { "id": "n_signal", "glyphId": "n_signal", "meaningJa": "信号", "meaningEn": "signal", "pos": "noun", "morphemes": ["signal"], "isDefaultSet": false },
+  { "id": "n_route", "glyphId": "n_route", "meaningJa": "経路", "meaningEn": "route", "pos": "noun", "morphemes": ["route"], "isDefaultSet": false },
+  { "id": "v_hide", "glyphId": "v_hide", "meaningJa": "隠す", "meaningEn": "hide", "pos": "verb", "morphemes": ["hide"], "isDefaultSet": false }
 ]

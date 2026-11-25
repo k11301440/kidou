@@ -42,7 +42,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -56,7 +56,9 @@ import com.kidou.game.model.WordColorTag
 import com.kidou.game.model.WordDef
 import com.kidou.game.ui.components.GlyphSentenceRow
 import com.kidou.game.ui.components.PixelGlyph
+import com.kidou.game.ui.components.rememberKidouHapticClick
 import com.kidou.game.ui.i18n.stringsFor
+import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouTheme
 import kotlinx.coroutines.delay
 
@@ -78,6 +80,7 @@ fun WordEditorSheet(
 ) {
   val palette = KidouTheme.palette
   val strings = stringsFor(language)
+  val hapticClick = rememberKidouHapticClick()
   val wordDef = words[wordId]
   val existing = dictionary[wordId]
   val initialText = existing?.resolvedTranslation(wordDef, language).orEmpty()
@@ -149,7 +152,7 @@ fun WordEditorSheet(
           Text(
             text = strings.wordMemoTitle,
             color = palette.muted,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = DotGothic16FontFamily,
             fontSize = 11.sp,
           )
           Text(
@@ -157,14 +160,14 @@ fun WordEditorSheet(
             color =
               if (translationField.text.isNotBlank()) palette.tagColor(selectedTag)
               else palette.muted,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
+            fontFamily = DotGothic16FontFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 19.sp,
           )
           Text(
             text = strings.wordMemoHint,
             color = palette.muted,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = DotGothic16FontFamily,
             fontSize = 11.sp,
           )
         }
@@ -173,8 +176,9 @@ fun WordEditorSheet(
       OutlinedTextField(
         value = translationField,
         onValueChange = { translationField = it },
+        textStyle = TextStyle(fontFamily = DotGothic16FontFamily, fontSize = 14.sp),
         label = {
-          Text(strings.translationFieldLabel, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+          Text(strings.translationFieldLabel, fontFamily = DotGothic16FontFamily, fontSize = 12.sp)
         },
         singleLine = true,
         modifier =
@@ -203,7 +207,7 @@ fun WordEditorSheet(
             else -> strings.adUnavailableTapRetry
           }
         OutlinedButton(
-          onClick = onWatchAdReveal,
+          onClick = { hapticClick(); onWatchAdReveal() },
           enabled = !isAdRevealed && adLoadState != AdLoadState.LOADING,
           shape = RectangleShape,
           modifier =
@@ -213,8 +217,8 @@ fun WordEditorSheet(
         ) {
           Text(
             text = adButtonLabel,
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.Bold,
+            fontFamily = DotGothic16FontFamily,
+            fontWeight = FontWeight.Normal,
             fontSize = 12.sp,
             color = if (isAdRevealed) palette.statusSuccess else palette.accentSecondary,
           )
@@ -223,7 +227,7 @@ fun WordEditorSheet(
           Text(
             text = strings.adUnavailableTapRetry,
             color = palette.statusDanger,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = DotGothic16FontFamily,
             fontSize = 11.sp,
           )
         }
@@ -233,7 +237,7 @@ fun WordEditorSheet(
         Text(
           text = strings.tagSectionLabel,
           color = palette.muted,
-          fontFamily = FontFamily.Monospace,
+          fontFamily = DotGothic16FontFamily,
           fontSize = 11.sp,
         )
         FlowRow(
@@ -254,16 +258,16 @@ fun WordEditorSheet(
                     color = if (isSelected) tagColor else palette.border,
                     shape = RectangleShape,
                   )
-                  .clickable { selectedTag = tag }
+                  .clickable { hapticClick(); selectedTag = tag }
                   .padding(horizontal = 10.dp, vertical = 6.dp),
             ) {
               Box(modifier = Modifier.size(8.dp).background(tagColor))
               Text(
                 text = tag.label(language),
                 color = if (isSelected) tagColor else palette.glyph,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = DotGothic16FontFamily,
                 fontSize = 12.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = FontWeight.Normal,
               )
             }
           }
@@ -273,7 +277,8 @@ fun WordEditorSheet(
       OutlinedTextField(
         value = memo,
         onValueChange = { memo = it },
-        label = { Text(strings.memoFieldLabel, fontFamily = FontFamily.Monospace, fontSize = 12.sp) },
+        textStyle = TextStyle(fontFamily = DotGothic16FontFamily, fontSize = 13.sp),
+        label = { Text(strings.memoFieldLabel, fontFamily = DotGothic16FontFamily, fontSize = 12.sp) },
         minLines = 2,
         maxLines = 4,
         modifier = Modifier.fillMaxWidth(),
@@ -292,7 +297,7 @@ fun WordEditorSheet(
           Text(
             text = strings.contextsLabel,
             color = palette.muted,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = DotGothic16FontFamily,
             fontSize = 11.sp,
           )
           Column(
@@ -327,6 +332,7 @@ fun WordEditorSheet(
       ) {
         OutlinedButton(
           onClick = {
+            hapticClick()
             translationField = TextFieldValue("")
             selectedTag = WordColorTag.UNCLASSIFIED
             memo = ""
@@ -334,10 +340,10 @@ fun WordEditorSheet(
           shape = RectangleShape,
           modifier = Modifier.weight(1f),
         ) {
-          Text(strings.clear, fontFamily = FontFamily.Monospace, color = palette.muted)
+          Text(strings.clear, fontFamily = DotGothic16FontFamily, color = palette.muted)
         }
         Button(
-          onClick = { onSave(translationField.text, selectedTag, memo) },
+          onClick = { hapticClick(); onSave(translationField.text, selectedTag, memo) },
           shape = RectangleShape,
           colors =
             ButtonDefaults.buttonColors(
@@ -346,7 +352,7 @@ fun WordEditorSheet(
             ),
           modifier = Modifier.weight(2f).semantics { contentDescription = "word_save_btn" },
         ) {
-          Text(strings.save, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+          Text(strings.save, fontFamily = DotGothic16FontFamily, fontWeight = FontWeight.Normal)
         }
       }
       Spacer(modifier = Modifier.height(4.dp))
