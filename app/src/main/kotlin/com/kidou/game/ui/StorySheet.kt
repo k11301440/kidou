@@ -51,22 +51,15 @@ fun StorySheet(
     shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp),
   ) {
     Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp).padding(bottom = 24.dp),
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp).padding(bottom = 24.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      // §2: Show board number using glyphs instead of "(BOARD X)" ASCII text
+      // Glyph-only board badge (§5: removed plain decorative heading & meta note)
       Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
       ) {
-        Text(
-          text = strings.storyTitle,
-          fontFamily = DotGothic16FontFamily,
-          fontWeight = FontWeight.Normal,
-          fontSize = 18.sp,
-          color = palette.accentSecondary,
-        )
         Row(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -95,17 +88,6 @@ fun StorySheet(
             onWordClick = onEditWord,
           )
         }
-      }
-
-      // §2: Remove storyUnregisteredNote ("辞書が育つほど…"); only keep starter note on Board 1
-      if (boardDef.id == 1) {
-        Text(
-          text = strings.storyDefaultNote,
-          color = palette.muted,
-          fontFamily = DotGothic16FontFamily,
-          fontWeight = FontWeight.Normal,
-          fontSize = 12.sp,
-        )
       }
     }
   }

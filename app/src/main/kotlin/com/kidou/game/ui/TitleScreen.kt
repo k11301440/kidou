@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -19,23 +20,29 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kidou.game.BuildConfig
+import com.kidou.game.R
 import com.kidou.game.model.AppLanguage
 import com.kidou.game.model.GlyphGrid
+import com.kidou.game.ui.components.LocalPadPressed
 import com.kidou.game.ui.components.PixelActionButton
 import com.kidou.game.ui.components.PixelBevelPad
 import com.kidou.game.ui.components.PixelGlyph
@@ -45,6 +52,7 @@ import com.kidou.game.ui.theme.DotGothic16FontFamily
 import com.kidou.game.ui.theme.KidouPalette
 import com.kidou.game.ui.theme.KidouTheme
 import kotlin.math.floor
+import kotlinx.coroutines.delay
 
 @Composable
 fun TitleScreen(
@@ -53,12 +61,26 @@ fun TitleScreen(
   subtitle: String,
   language: AppLanguage,
   bgmEnabled: Boolean,
+  showRtaButton: Boolean,
+  rtaBestTimeMs: Long?,
+  playGamesLinked: Boolean,
+  playGamesToast: String?,
   onStart: () -> Unit,
+  onStartRta: () -> Unit,
+  onPlayGamesClick: () -> Unit,
+  onClearPlayGamesToast: () -> Unit,
   onToggleLanguage: (AppLanguage) -> Unit,
   onToggleBgm: (Boolean) -> Unit,
 ) {
   val palette = KidouTheme.palette
   val strings = stringsFor(language)
+
+  LaunchedEffect(playGamesToast) {
+    if (playGamesToast != null) {
+      delay(3000L)
+      onClearPlayGamesToast()
+    }
+  }
 
   Box(
     modifier =
@@ -161,7 +183,7 @@ fun TitleScreen(
           ) {
             Text(
               text = strings.startGame,
-              color = if (com.kidou.game.ui.components.LocalPadPressed.current) {
+              color = if (LocalPadPressed.current) {
                 if (palette.isDark) palette.background else palette.tile
               } else {
                 palette.accentPrimary
@@ -170,6 +192,104 @@ fun TitleScreen(
               fontWeight = FontWeight.Normal,
               fontSize = 17.sp,
               letterSpacing = 2.sp,
+            )
+          }
+
+          if (showRtaButton) {
+            PixelBevelPad(
+              borderColor = palette.statusSuccess,
+              fillColor = palette.statusSuccess.copy(alpha = 0.16f),
+              onClick = onStartRta,
+              modifier =
+                Modifier
+                  .fillMaxWidth()
+                  .height(48.dp)
+                  .semantics { contentDescription = "title_rta" },
+            ) {
+              val fg =
+                if (LocalPadPressed.current) {
+                  if (palette.isDark) palette.background else palette.tile
+                } else {
+                  palette.statusSuccess
+                }
+              Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+              ) {
+                Text(
+                  text = strings.rtaButtonLabel,
+                  color = fg,
+                  fontFamily = DotGothic16FontFamily,
+                  fontWeight = FontWeight.Normal,
+                  fontSize = 16.sp,
+                  letterSpacing = 2.sp,
+                )
+                if (rtaBestTimeMs != null) {
+                  Text(
+                    text = formatRtaTime(rtaBestTimeMs),
+                    color = fg.copy(alpha = 0.85f),
+                    fontFamily = DotGothic16FontFamily,
+                    fontSize = 12.sp,
+                  )
+                }
+              }
+            }
+          }
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            val pgColor = if (playGamesLinked) palette.accentSecondary else palette.glyph
+            PixelBevelPad(
+              borderColor = pgColor,
+              fillColor = pgColor.copy(alpha = 0.12f),
+              onClick = onPlayGamesClick,
+              modifier =
+                Modifier
+                  .height(44.dp)
+                  .semantics { contentDescription = "title_play_games" },
+            ) {
+              val fg =
+                if (LocalPadPressed.current) {
+                  if (palette.isDark) palette.background else palette.tile
+                } else {
+                  pgColor
+                }
+              Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+              ) {
+                Image(
+                  painter = painterResource(R.drawable.ic_play_games_controller),
+                  contentDescription = null,
+                  colorFilter = ColorFilter.tint(fg),
+                  modifier = Modifier.size(22.dp),
+                )
+                Text(
+                  text = if (playGamesLinked) strings.playGamesAchievementsBtn else strings.playGamesSectionTitle,
+                  color = fg,
+                  fontFamily = DotGothic16FontFamily,
+                  fontSize = 12.sp,
+                )
+              }
+            }
+          }
+
+          if (playGamesToast != null) {
+            val msg =
+              when (playGamesToast) {
+                "restored" -> strings.playGamesRestoredToast
+                "no_cloud_save" -> strings.playGamesNoCloudToast
+                else -> strings.playGamesUnavailableToast
+              }
+            Text(
+              text = msg,
+              color = palette.muted,
+              fontFamily = DotGothic16FontFamily,
+              fontSize = 11.sp,
             )
           }
         }
@@ -183,7 +303,7 @@ fun TitleScreen(
             .padding(horizontal = 10.dp, vertical = 4.dp),
       ) {
         Text(
-          text = "v${BuildConfig.VERSION_NAME} PROTOTYPE",
+          text = "v${BuildConfig.VERSION_NAME}",
           color = palette.muted,
           fontFamily = DotGothic16FontFamily,
           fontWeight = FontWeight.Normal,

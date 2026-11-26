@@ -483,7 +483,14 @@
                 "v_stop"
               ]
             ],
-            "secondaryMessage": []
+            "secondaryMessage": [
+              [
+                "n_lamp"
+              ],
+              [
+                "v_close"
+              ]
+            ]
           },
           "requirements": {
             "keyEq": "in",
@@ -601,6 +608,18 @@
               [
                 "d_1",
                 "m_times"
+              ]
+            ],
+            [
+              [
+                "n_conduit"
+              ],
+              [
+                "v_cut",
+                "m_not"
+              ],
+              [
+                "v_connect"
               ]
             ]
           ],
@@ -750,6 +769,17 @@
                 "d_1",
                 "m_times"
               ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
+              ]
             ]
           ],
           "initialState": {
@@ -822,6 +852,17 @@
               [
                 "d_1",
                 "m_times"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
               ]
             ]
           ],
@@ -1155,7 +1196,14 @@
                 "v_stop"
               ]
             ],
-            "secondaryMessage": []
+            "secondaryMessage": [
+              [
+                "n_machine"
+              ],
+              [
+                "adj_danger"
+              ]
+            ]
           },
           "sequenceSteps": [
             {
@@ -1789,6 +1837,18 @@
                 "d_1",
                 "m_times"
               ]
+            ],
+            [
+              [
+                "n_conduit"
+              ],
+              [
+                "v_cut",
+                "m_not"
+              ],
+              [
+                "adj_danger"
+              ]
             ]
           ],
           "initialState": {
@@ -1882,6 +1942,18 @@
               [
                 "d_1",
                 "m_times"
+              ]
+            ],
+            [
+              [
+                "n_key"
+              ],
+              [
+                "v_remove",
+                "m_not"
+              ],
+              [
+                "v_insert"
               ]
             ]
           ],
@@ -2085,6 +2157,17 @@
               [
                 "d_2",
                 "m_times"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
               ]
             ]
           ],
@@ -2813,6 +2896,18 @@
               ],
               [
                 "v_push"
+              ]
+            ],
+            [
+              [
+                "n_lever"
+              ],
+              [
+                "v_up",
+                "m_not"
+              ],
+              [
+                "v_pull"
               ]
             ]
           ],
@@ -3629,6 +3724,17 @@
               [
                 "v_hold"
               ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
+              ]
             ]
           ],
           "initialState": {
@@ -3859,7 +3965,14 @@
                 "v_left"
               ]
             ],
-            "secondaryMessage": []
+            "secondaryMessage": [
+              [
+                "n_lamp"
+              ],
+              [
+                "v_close"
+              ]
+            ]
           },
           "sequenceSteps": [
             {
@@ -4854,6 +4967,18 @@
                 "d_2",
                 "m_times"
               ]
+            ],
+            [
+              [
+                "n_lever"
+              ],
+              [
+                "v_up",
+                "m_not"
+              ],
+              [
+                "v_down"
+              ]
             ]
           ],
           "initialState": {
@@ -5815,6 +5940,18 @@
               [
                 "v_push"
               ]
+            ],
+            [
+              [
+                "n_conduit"
+              ],
+              [
+                "v_cut",
+                "m_not"
+              ],
+              [
+                "v_connect"
+              ]
             ]
           ],
           "initialState": {
@@ -6424,7 +6561,14 @@
                 "v_stop"
               ]
             ],
-            "secondaryMessage": []
+            "secondaryMessage": [
+              [
+                "n_lamp"
+              ],
+              [
+                "v_close"
+              ]
+            ]
           },
           "requirements": {
             "swAEq": true,
@@ -6674,6 +6818,25 @@
               ],
               [
                 "v_push"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
+              ]
+            ],
+            [
+              [
+                "n_valve"
+              ],
+              [
+                "v_decrease"
               ]
             ]
           ],
@@ -6939,7 +7102,14 @@
                 "v_cut"
               ]
             ],
-            "secondaryMessage": []
+            "secondaryMessage": [
+              [
+                "n_machine"
+              ],
+              [
+                "adj_danger"
+              ]
+            ]
           },
           "requirements": {
             "conduitEq": "connected",
@@ -7367,6 +7537,25 @@
               ],
               [
                 "v_push"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
+              ]
+            ],
+            [
+              [
+                "n_valve"
+              ],
+              [
+                "v_decrease"
               ]
             ]
           ],
@@ -7973,6 +8162,17 @@
               [
                 "v_push"
               ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
+              ]
             ]
           ],
           "initialState": {
@@ -8456,7 +8656,14 @@
                 "v_stop"
               ]
             ],
-            "secondaryMessage": []
+            "secondaryMessage": [
+              [
+                "n_lamp"
+              ],
+              [
+                "v_close"
+              ]
+            ]
           },
           "requirements": {
             "swBEq": false,
@@ -8873,6 +9080,25 @@
               [
                 "v_push"
               ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
+              ]
+            ],
+            [
+              [
+                "n_valve"
+              ],
+              [
+                "v_decrease"
+              ]
             ]
           ],
           "initialState": {
@@ -8966,6 +9192,18 @@
               ],
               [
                 "v_push"
+              ]
+            ],
+            [
+              [
+                "n_lever"
+              ],
+              [
+                "v_pull",
+                "m_not"
+              ],
+              [
+                "v_up"
               ]
             ]
           ],
@@ -9799,6 +10037,17 @@
               [
                 "v_hold"
               ]
+            ],
+            [
+              [
+                "n_lamp"
+              ],
+              [
+                "v_close"
+              ],
+              [
+                "adj_danger"
+              ]
             ]
           ],
           "initialState": {
@@ -10268,6 +10517,25 @@
               [
                 "v_hold"
               ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
+              ]
+            ],
+            [
+              [
+                "n_valve"
+              ],
+              [
+                "v_decrease"
+              ]
             ]
           ],
           "initialState": {
@@ -10552,6 +10820,17 @@
               ],
               [
                 "v_push"
+              ]
+            ],
+            [
+              [
+                "n_machine"
+              ],
+              [
+                "v_hide"
+              ],
+              [
+                "adj_danger"
               ]
             ]
           ],
@@ -11050,6 +11329,25 @@
               ],
               [
                 "v_hold"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_increase"
+              ]
+            ],
+            [
+              [
+                "n_machine"
+              ],
+              [
+                "v_hide"
               ]
             ]
           ],
@@ -11565,33 +11863,3795 @@
       "storyLines": [
         [
           [
-            "n_board",
+            "n_core"
+          ],
+          [
             "d_1",
+            "d_0",
             "d_0"
+          ],
+          [
+            "v_stop"
+          ]
+        ],
+        [
+          [
+            "n_route"
+          ],
+          [
+            "m_all"
+          ],
+          [
+            "v_connect"
+          ]
+        ],
+        [
+          [
+            "n_signal"
+          ],
+          [
+            "n_dial"
+          ],
+          [
+            "n_valve"
+          ],
+          [
+            "v_match"
+          ]
+        ],
+        [
+          [
+            "n_core"
+          ],
+          [
+            "v_activate"
+          ],
+          [
+            "n_gate"
           ],
           [
             "v_open"
           ]
-        ],
-        [
-          [
-            "n_machine",
-            "m_all"
-          ],
-          [
-            "v_activate"
-          ]
-        ],
-        [
-          [
-            "n_ahead"
-          ],
-          [
-            "v_proceed"
-          ]
         ]
       ],
-      "levels": []
+      "levels": [
+        {
+          "levelNumber": 1,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "sw_d",
+            "route",
+            "button"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b"
+            ],
+            "sw_b": [
+              "sw_c"
+            ],
+            "sw_c": [
+              "sw_d"
+            ],
+            "sw_d": []
+          },
+          "plates": [
+            [
+              [
+                "n_switch"
+              ],
+              [
+                "m_all"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_route"
+              ],
+              [
+                "d_3"
+              ],
+              [
+                "v_match"
+              ]
+            ],
+            [
+              [
+                "n_button"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": true,
+            "swB": false,
+            "swC": false,
+            "swD": false,
+            "route": 1,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_switch"
+              ],
+              [
+                "v_stop"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_lamp"
+              ],
+              [
+                "v_close"
+              ]
+            ]
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": true,
+            "swCEq": true,
+            "swDEq": true,
+            "routeEq": 3,
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [
+            [
+              "n_switch"
+            ],
+            [
+              "m_all"
+            ],
+            [
+              "v_activate"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_route"
+            ],
+            [
+              "d_3"
+            ],
+            [
+              "v_flow"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 2,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "lock",
+            "order_pad"
+          ],
+          "plates": [
+            [
+              [
+                "n_lock"
+              ],
+              [
+                "v_lock",
+                "m_not"
+              ],
+              [
+                "v_unlock"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_4"
+              ],
+              [
+                "m_first"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "d_4",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_1"
+              ],
+              [
+                "d_2",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_3"
+              ],
+              [
+                "m_last"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "lock": "locked",
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_lock"
+              ],
+              [
+                "v_lock"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_machine"
+              ],
+              [
+                "adj_danger"
+              ]
+            ]
+          },
+          "requirements": {
+            "lockEq": "unlocked",
+            "orderSequence": [
+              4,
+              2,
+              1,
+              3
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_button"
+            ],
+            [
+              "m_all"
+            ],
+            [
+              "adj_complete"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_gate"
+            ],
+            [
+              "v_open"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 3,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "dial",
+            "button"
+          ],
+          "tickerEnabled": true,
+          "tickerIntervalMs": 1150,
+          "tickerSequence": [
+            0,
+            2,
+            4,
+            1,
+            3
+          ],
+          "plates": [
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_decrease"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_2",
+                "d_1"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_1"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_4"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "d_3",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_2"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "dial": 20,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_signal"
+              ],
+              [
+                "v_flow"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_dial"
+              ],
+              [
+                "d_4",
+                "d_0"
+              ]
+            ]
+          },
+          "requirements": {
+            "dialEq": 11,
+            "tickerTargets": [
+              1,
+              4,
+              2
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_signal"
+            ],
+            [
+              "v_match"
+            ],
+            [
+              "adj_complete"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_machine"
+            ],
+            [
+              "v_activate"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 4,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "slider",
+            "dial",
+            "valve",
+            "hold_button"
+          ],
+          "plates": [
+            [
+              [
+                "n_slider"
+              ],
+              [
+                "v_swipe"
+              ],
+              [
+                "v_left"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "m_same"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_4",
+                "d_4"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_increase"
+              ]
+            ],
+            [
+              [
+                "n_valve"
+              ],
+              [
+                "v_decrease"
+              ]
+            ],
+            [
+              [
+                "n_button"
+              ],
+              [
+                "v_hold"
+              ]
+            ]
+          ],
+          "initialState": {
+            "slider": "right",
+            "dial": 5,
+            "valve": 18,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_slider"
+              ],
+              [
+                "v_right"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_dial"
+              ],
+              [
+                "d_1",
+                "d_0"
+              ]
+            ]
+          },
+          "requirements": {
+            "sliderEq": "left",
+            "dialEqualsValve": true,
+            "dialPlusValveEq": 24,
+            "requireHold": true
+          },
+          "completionPrimary": [
+            [
+              "n_dial"
+            ],
+            [
+              "n_valve"
+            ],
+            [
+              "m_same"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_machine"
+            ],
+            [
+              "v_activate"
+            ],
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 5,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": [
+            "conduit",
+            "lock",
+            "key",
+            "route",
+            "lever",
+            "dual_button"
+          ],
+          "plates": [
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_conduit"
+              ],
+              [
+                "v_connect"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_lock"
+              ],
+              [
+                "v_unlock"
+              ]
+            ],
+            [
+              [
+                "d_3",
+                "m_ord"
+              ],
+              [
+                "n_key"
+              ],
+              [
+                "v_insert"
+              ]
+            ],
+            [
+              [
+                "d_4",
+                "m_ord"
+              ],
+              [
+                "n_route"
+              ],
+              [
+                "d_2"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "d_0",
+                "m_ord"
+              ],
+              [
+                "n_lever"
+              ],
+              [
+                "v_pull"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_together"
+              ],
+              [
+                "v_push"
+              ],
+              [
+                "d_2",
+                "m_times"
+              ]
+            ]
+          ],
+          "initialState": {
+            "conduit": "cut",
+            "lock": "locked",
+            "key": "out",
+            "route": 1,
+            "lever": "up",
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_conduit"
+              ],
+              [
+                "v_cut"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "sequenceSteps": [
+            {
+              "trigger": "conduit_connect",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_conduit"
+                ],
+                [
+                  "v_connect",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "lock_unlock",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_lock"
+                ],
+                [
+                  "v_unlock",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "key_insert",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_key"
+                ],
+                [
+                  "v_insert",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "route_2",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_route"
+                ],
+                [
+                  "d_2",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "lever_pull",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_lever"
+                ],
+                [
+                  "v_pull",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "dual_push",
+              "repeatCount": 2,
+              "hintPrimary": [
+                [
+                  "n_button",
+                  "d_2"
+                ],
+                [
+                  "m_together",
+                  "m_not"
+                ]
+              ]
+            }
+          ],
+          "completionPrimary": [
+            [
+              "n_conduit"
+            ],
+            [
+              "v_flow"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_machine"
+            ],
+            [
+              "v_activate"
+            ],
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 6,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "sw_d",
+            "conduit",
+            "route",
+            "button"
+          ],
+          "plates": [
+            [
+              [
+                "n_switch",
+                "d_1"
+              ],
+              [
+                "op_or"
+              ],
+              [
+                "n_switch",
+                "d_2"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_switch",
+                "d_1"
+              ],
+              [
+                "op_or"
+              ],
+              [
+                "n_switch",
+                "d_4"
+              ],
+              [
+                "v_activate",
+                "m_not"
+              ]
+            ],
+            [
+              [
+                "n_switch",
+                "d_2"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_switch",
+                "d_3"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_conduit"
+              ],
+              [
+                "v_cut",
+                "m_not"
+              ],
+              [
+                "v_connect"
+              ]
+            ],
+            [
+              [
+                "n_route"
+              ],
+              [
+                "d_2"
+              ],
+              [
+                "v_match"
+              ]
+            ],
+            [
+              [
+                "n_button"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": true,
+            "swB": false,
+            "swC": false,
+            "swD": true,
+            "conduit": "cut",
+            "route": 1,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_switch"
+              ],
+              [
+                "v_stop"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_lamp"
+              ],
+              [
+                "v_close"
+              ]
+            ]
+          },
+          "requirements": {
+            "swAEq": false,
+            "swDEq": false,
+            "conduitEq": "connected",
+            "routeEq": 2,
+            "logicClauses": [
+              {
+                "operator": "XOR",
+                "checks": [
+                  {
+                    "module": "sw_a",
+                    "expected": "true"
+                  },
+                  {
+                    "module": "sw_b",
+                    "expected": "true"
+                  }
+                ]
+              },
+              {
+                "operator": "AND",
+                "checks": [
+                  {
+                    "module": "sw_b",
+                    "expected": "true"
+                  },
+                  {
+                    "module": "sw_c",
+                    "expected": "true"
+                  }
+                ]
+              },
+              {
+                "operator": "NOT",
+                "checks": [
+                  {
+                    "module": "sw_a",
+                    "expected": "true"
+                  },
+                  {
+                    "module": "sw_d",
+                    "expected": "true"
+                  }
+                ]
+              }
+            ],
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [
+            [
+              "n_core"
+            ],
+            [
+              "v_activate"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 7,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "order_pad"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b"
+            ],
+            "sw_b": [
+              "sw_c"
+            ],
+            "sw_c": []
+          },
+          "memoryMode": true,
+          "plates": [
+            [
+              [
+                "n_switch"
+              ],
+              [
+                "m_all"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_3"
+              ],
+              [
+                "m_first"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_1"
+              ],
+              [
+                "d_3",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_4"
+              ],
+              [
+                "d_1",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_last"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": true,
+            "swC": false,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_machine"
+              ],
+              [
+                "v_hide"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": true,
+            "swCEq": true,
+            "orderSequence": [
+              3,
+              1,
+              4,
+              2
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_button"
+            ],
+            [
+              "m_all"
+            ],
+            [
+              "adj_complete"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_machine"
+            ],
+            [
+              "v_activate"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 8,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "sw_d",
+            "dual_button"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b"
+            ],
+            "sw_b": [
+              "sw_c"
+            ],
+            "sw_c": [
+              "sw_d"
+            ],
+            "sw_d": [
+              "sw_a"
+            ]
+          },
+          "plates": [
+            [
+              [
+                "n_switch"
+              ],
+              [
+                "m_all"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_together"
+              ],
+              [
+                "v_push"
+              ],
+              [
+                "d_2",
+                "m_times"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": true,
+            "swB": false,
+            "swC": true,
+            "swD": false,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_switch"
+              ],
+              [
+                "v_match",
+                "m_not"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": true,
+            "swCEq": true,
+            "swDEq": true,
+            "dualPressesEq": 2
+          },
+          "completionPrimary": [
+            [
+              "n_switch"
+            ],
+            [
+              "m_all"
+            ],
+            [
+              "v_activate"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 9,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "hold_button"
+          ],
+          "tickerEnabled": true,
+          "tickerIntervalMs": 1800,
+          "tickerSequence": [
+            2,
+            0,
+            4,
+            1,
+            3
+          ],
+          "plates": [
+            [
+              [
+                "n_switch",
+                "d_1"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_switch",
+                "d_2"
+              ],
+              [
+                "v_activate",
+                "m_not"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_3"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_hold"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_0"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_hold"
+              ]
+            ],
+            [
+              [
+                "d_3",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_4"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_hold"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": true,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_signal"
+              ],
+              [
+                "v_flow"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": false,
+            "requireHold": true,
+            "tickerTargets": [
+              3,
+              0,
+              4
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_signal"
+            ],
+            [
+              "m_all"
+            ],
+            [
+              "adj_complete"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_machine"
+            ],
+            [
+              "v_activate"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 10,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "route",
+            "lever",
+            "dial",
+            "valve",
+            "button"
+          ],
+          "plates": [
+            [
+              [
+                "n_route"
+              ],
+              [
+                "d_3"
+              ],
+              [
+                "v_match"
+              ]
+            ],
+            [
+              [
+                "n_lever"
+              ],
+              [
+                "v_down",
+                "m_not"
+              ],
+              [
+                "v_up"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "m_same"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_1",
+                "d_0",
+                "d_3"
+              ]
+            ],
+            [
+              [
+                "n_button"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "route": 1,
+            "lever": "down",
+            "dial": 4,
+            "valve": 23,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_lever"
+              ],
+              [
+                "v_down"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_valve"
+              ],
+              [
+                "v_decrease"
+              ]
+            ]
+          },
+          "requirements": {
+            "routeEq": 3,
+            "leverEq": "up",
+            "dialEqualsValve": true,
+            "dialPlusValveEq": 28,
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [
+            [
+              "n_dial"
+            ],
+            [
+              "n_valve"
+            ],
+            [
+              "m_same"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 11,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": [
+            "lock",
+            "route",
+            "slider",
+            "key",
+            "lever"
+          ],
+          "memoryMode": true,
+          "plates": [
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_lock"
+              ],
+              [
+                "v_unlock"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_route"
+              ],
+              [
+                "d_3"
+              ]
+            ],
+            [
+              [
+                "d_3",
+                "m_ord"
+              ],
+              [
+                "n_slider"
+              ],
+              [
+                "v_swipe"
+              ],
+              [
+                "v_left"
+              ]
+            ],
+            [
+              [
+                "d_4",
+                "m_ord"
+              ],
+              [
+                "n_key"
+              ],
+              [
+                "v_insert"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "d_0",
+                "m_ord"
+              ],
+              [
+                "n_lever"
+              ],
+              [
+                "v_up"
+              ]
+            ]
+          ],
+          "initialState": {
+            "lock": "locked",
+            "route": 1,
+            "slider": "right",
+            "key": "out",
+            "lever": "down",
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_machine"
+              ],
+              [
+                "v_hide"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "sequenceSteps": [
+            {
+              "trigger": "lock_unlock",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_lock"
+                ],
+                [
+                  "v_unlock",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "route_3",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_route"
+                ],
+                [
+                  "d_3",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "slider_left",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_slider"
+                ],
+                [
+                  "v_left",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "key_insert",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_key"
+                ],
+                [
+                  "v_insert",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "lever_push",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_lever"
+                ],
+                [
+                  "v_up",
+                  "m_not"
+                ]
+              ]
+            }
+          ],
+          "completionPrimary": [
+            [
+              "n_gate"
+            ],
+            [
+              "v_open"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 12,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "sw_d",
+            "lock",
+            "button"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b",
+              "sw_c"
+            ],
+            "sw_b": [
+              "sw_d"
+            ],
+            "sw_c": [
+              "sw_d"
+            ],
+            "sw_d": [
+              "sw_a"
+            ]
+          },
+          "plates": [
+            [
+              [
+                "n_switch",
+                "d_1"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_switch",
+                "d_3"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_switch",
+                "d_2"
+              ],
+              [
+                "op_or"
+              ],
+              [
+                "n_switch",
+                "d_4"
+              ],
+              [
+                "v_activate",
+                "m_not"
+              ]
+            ],
+            [
+              [
+                "n_lock"
+              ],
+              [
+                "v_unlock"
+              ]
+            ],
+            [
+              [
+                "n_button"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": false,
+            "swC": false,
+            "swD": true,
+            "lock": "locked",
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_switch"
+              ],
+              [
+                "v_stop"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": false,
+            "swCEq": true,
+            "swDEq": false,
+            "lockEq": "unlocked",
+            "buttonPressesEq": 1
+          },
+          "completionPrimary": [
+            [
+              "n_switch"
+            ],
+            [
+              "v_match"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 13,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "sw_d",
+            "dial",
+            "hold_button"
+          ],
+          "plates": [
+            [
+              [
+                "n_switch",
+                "d_1"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_switch",
+                "d_3"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_switch",
+                "d_2"
+              ],
+              [
+                "op_or"
+              ],
+              [
+                "n_switch",
+                "d_4"
+              ],
+              [
+                "v_activate",
+                "m_not"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_turn"
+              ],
+              [
+                "v_decrease"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_3",
+                "d_3"
+              ]
+            ],
+            [
+              [
+                "n_button"
+              ],
+              [
+                "v_hold"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": true,
+            "swC": false,
+            "swD": true,
+            "dial": 24,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_dial"
+              ],
+              [
+                "d_4",
+                "d_4"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "logicClauses": [
+              {
+                "operator": "AND",
+                "checks": [
+                  {
+                    "module": "sw_a",
+                    "expected": "true"
+                  },
+                  {
+                    "module": "sw_c",
+                    "expected": "true"
+                  }
+                ]
+              },
+              {
+                "operator": "NOT",
+                "checks": [
+                  {
+                    "module": "sw_b",
+                    "expected": "true"
+                  },
+                  {
+                    "module": "sw_d",
+                    "expected": "true"
+                  }
+                ]
+              }
+            ],
+            "dialEq": 18,
+            "requireHold": true
+          },
+          "completionPrimary": [
+            [
+              "n_core"
+            ],
+            [
+              "v_activate"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 14,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "conduit",
+            "button"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b"
+            ],
+            "sw_b": [
+              "sw_c"
+            ],
+            "sw_c": [
+              "sw_a",
+              "sw_b"
+            ]
+          },
+          "tickerEnabled": true,
+          "tickerIntervalMs": 1150,
+          "tickerSequence": [
+            1,
+            3,
+            2,
+            0,
+            4
+          ],
+          "plates": [
+            [
+              [
+                "n_switch"
+              ],
+              [
+                "m_all"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_conduit"
+              ],
+              [
+                "v_connect"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_2"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_4"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "d_3",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_1"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": true,
+            "swC": false,
+            "conduit": "cut",
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_signal"
+              ],
+              [
+                "v_flow"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": true,
+            "swCEq": true,
+            "conduitEq": "connected",
+            "tickerTargets": [
+              2,
+              4,
+              1
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_signal"
+            ],
+            [
+              "v_match"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 15,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "route",
+            "slider",
+            "order_pad"
+          ],
+          "memoryMode": true,
+          "plates": [
+            [
+              [
+                "n_route"
+              ],
+              [
+                "d_2"
+              ],
+              [
+                "v_match"
+              ]
+            ],
+            [
+              [
+                "n_slider"
+              ],
+              [
+                "v_swipe"
+              ],
+              [
+                "v_right"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_1"
+              ],
+              [
+                "m_first"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_4"
+              ],
+              [
+                "d_1",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "d_4",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_3"
+              ],
+              [
+                "m_last"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "route": 3,
+            "slider": "left",
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_machine"
+              ],
+              [
+                "v_hide"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "routeEq": 2,
+            "sliderEq": "right",
+            "orderSequence": [
+              1,
+              4,
+              2,
+              3
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_route"
+            ],
+            [
+              "d_2"
+            ],
+            [
+              "v_flow"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 16,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "dial",
+            "valve",
+            "dual_button"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b"
+            ],
+            "sw_b": []
+          },
+          "plates": [
+            [
+              [
+                "n_switch",
+                "d_1"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_switch",
+                "d_2"
+              ],
+              [
+                "v_activate",
+                "m_not"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "m_same"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_1",
+                "d_2",
+                "d_1"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_together"
+              ],
+              [
+                "v_push"
+              ],
+              [
+                "d_2",
+                "m_times"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": false,
+            "dial": 6,
+            "valve": 25,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_dial"
+              ],
+              [
+                "v_increase"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_valve"
+              ],
+              [
+                "v_decrease"
+              ]
+            ]
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": false,
+            "dialEqualsValve": true,
+            "dialPlusValveEq": 36,
+            "dualPressesEq": 2
+          },
+          "completionPrimary": [
+            [
+              "n_dial"
+            ],
+            [
+              "n_valve"
+            ],
+            [
+              "m_same"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 17,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": [
+            "key",
+            "lock",
+            "dial",
+            "valve",
+            "lever",
+            "hold_button"
+          ],
+          "plates": [
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_lock"
+              ],
+              [
+                "v_unlock"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_key"
+              ],
+              [
+                "v_insert"
+              ]
+            ],
+            [
+              [
+                "d_3",
+                "m_ord"
+              ],
+              [
+                "n_dial"
+              ],
+              [
+                "v_decrease"
+              ],
+              [
+                "d_2",
+                "m_times"
+              ]
+            ],
+            [
+              [
+                "d_4",
+                "m_ord"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "v_increase"
+              ],
+              [
+                "d_2",
+                "m_times"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "d_0",
+                "m_ord"
+              ],
+              [
+                "n_lever"
+              ],
+              [
+                "v_pull"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_button"
+              ],
+              [
+                "v_hold"
+              ]
+            ]
+          ],
+          "initialState": {
+            "lock": "locked",
+            "key": "out",
+            "dial": 10,
+            "valve": 5,
+            "lever": "up",
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_lock"
+              ],
+              [
+                "v_lock"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "sequenceSteps": [
+            {
+              "trigger": "lock_unlock",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_lock"
+                ],
+                [
+                  "v_unlock",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "key_insert",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_key"
+                ],
+                [
+                  "v_insert",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "dial_dec",
+              "repeatCount": 2,
+              "hintPrimary": [
+                [
+                  "n_dial"
+                ],
+                [
+                  "v_decrease",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "valve_inc",
+              "repeatCount": 2,
+              "hintPrimary": [
+                [
+                  "n_valve"
+                ],
+                [
+                  "v_increase",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "lever_pull",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_lever"
+                ],
+                [
+                  "v_pull",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "button_hold",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_button"
+                ],
+                [
+                  "v_hold",
+                  "m_not"
+                ]
+              ]
+            }
+          ],
+          "completionPrimary": [
+            [
+              "n_machine"
+            ],
+            [
+              "v_activate"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 18,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "sw_d",
+            "route",
+            "hold_button"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b"
+            ],
+            "sw_b": [
+              "sw_a",
+              "sw_c"
+            ],
+            "sw_c": [
+              "sw_b",
+              "sw_d"
+            ],
+            "sw_d": [
+              "sw_c"
+            ]
+          },
+          "plates": [
+            [
+              [
+                "n_switch"
+              ],
+              [
+                "m_all"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_route"
+              ],
+              [
+                "d_3"
+              ],
+              [
+                "v_match"
+              ]
+            ],
+            [
+              [
+                "n_button"
+              ],
+              [
+                "v_hold"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": true,
+            "swC": false,
+            "swD": true,
+            "route": 1,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_switch"
+              ],
+              [
+                "v_stop"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": true,
+            "swCEq": true,
+            "swDEq": true,
+            "routeEq": 3,
+            "requireHold": true
+          },
+          "completionPrimary": [
+            [
+              "n_switch"
+            ],
+            [
+              "m_all"
+            ],
+            [
+              "v_activate"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 19,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "slider",
+            "dial",
+            "valve",
+            "dual_button"
+          ],
+          "tickerEnabled": true,
+          "tickerIntervalMs": 1200,
+          "tickerSequence": [
+            0,
+            4,
+            2,
+            1,
+            3
+          ],
+          "plates": [
+            [
+              [
+                "n_slider"
+              ],
+              [
+                "v_swipe"
+              ],
+              [
+                "v_left"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_2",
+                "d_0"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_4",
+                "d_1"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_0"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_together"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_3"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_together"
+              ]
+            ],
+            [
+              [
+                "d_3",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_2"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_together"
+              ]
+            ]
+          ],
+          "initialState": {
+            "slider": "right",
+            "dial": 15,
+            "valve": 3,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_signal"
+              ],
+              [
+                "v_flow"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_dial"
+              ],
+              [
+                "v_decrease"
+              ]
+            ]
+          },
+          "requirements": {
+            "sliderEq": "left",
+            "dialEq": 10,
+            "dialPlusValveEq": 21,
+            "tickerTargets": [
+              0,
+              3,
+              2
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_core"
+            ],
+            [
+              "v_activate"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 20,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "route",
+            "dial",
+            "valve",
+            "order_pad"
+          ],
+          "memoryMode": true,
+          "plates": [
+            [
+              [
+                "n_route"
+              ],
+              [
+                "d_3"
+              ],
+              [
+                "v_match"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "m_same"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_1",
+                "d_0",
+                "d_1"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_4"
+              ],
+              [
+                "m_first"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_3"
+              ],
+              [
+                "d_4",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_1"
+              ],
+              [
+                "d_3",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_last"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "route": 1,
+            "dial": 20,
+            "valve": 4,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_machine"
+              ],
+              [
+                "v_hide"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "routeEq": 3,
+            "dialEqualsValve": true,
+            "dialPlusValveEq": 26,
+            "orderSequence": [
+              4,
+              3,
+              1,
+              2
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_button"
+            ],
+            [
+              "m_all"
+            ],
+            [
+              "adj_complete"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_machine"
+            ],
+            [
+              "v_activate"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 21,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "sw_d",
+            "conduit",
+            "lock",
+            "hold_button"
+          ],
+          "plates": [
+            [
+              [
+                "n_switch",
+                "d_1"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_switch",
+                "d_4"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_switch",
+                "d_2"
+              ],
+              [
+                "op_or"
+              ],
+              [
+                "n_switch",
+                "d_3"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_switch",
+                "d_2"
+              ],
+              [
+                "v_activate",
+                "m_not"
+              ]
+            ],
+            [
+              [
+                "n_conduit"
+              ],
+              [
+                "v_connect"
+              ]
+            ],
+            [
+              [
+                "n_lock"
+              ],
+              [
+                "v_unlock"
+              ]
+            ],
+            [
+              [
+                "n_button"
+              ],
+              [
+                "v_hold"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": true,
+            "swC": false,
+            "swD": false,
+            "conduit": "cut",
+            "lock": "locked",
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_switch"
+              ],
+              [
+                "v_stop"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "swBEq": false,
+            "conduitEq": "connected",
+            "lockEq": "unlocked",
+            "logicClauses": [
+              {
+                "operator": "AND",
+                "checks": [
+                  {
+                    "module": "sw_a",
+                    "expected": "true"
+                  },
+                  {
+                    "module": "sw_d",
+                    "expected": "true"
+                  }
+                ]
+              },
+              {
+                "operator": "XOR",
+                "checks": [
+                  {
+                    "module": "sw_b",
+                    "expected": "true"
+                  },
+                  {
+                    "module": "sw_c",
+                    "expected": "true"
+                  }
+                ]
+              }
+            ],
+            "requireHold": true
+          },
+          "completionPrimary": [
+            [
+              "n_gate"
+            ],
+            [
+              "v_open"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_machine"
+            ],
+            [
+              "v_activate"
+            ],
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 22,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "sw_d",
+            "button"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b",
+              "sw_d"
+            ],
+            "sw_b": [
+              "sw_c"
+            ],
+            "sw_c": [
+              "sw_a",
+              "sw_d"
+            ],
+            "sw_d": [
+              "sw_b"
+            ]
+          },
+          "tickerEnabled": true,
+          "tickerIntervalMs": 1150,
+          "tickerSequence": [
+            1,
+            3,
+            4,
+            0,
+            2
+          ],
+          "plates": [
+            [
+              [
+                "n_switch"
+              ],
+              [
+                "m_all"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_4"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_2"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "d_3",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_1"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": false,
+            "swC": false,
+            "swD": true,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_signal"
+              ],
+              [
+                "v_flow"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": true,
+            "swCEq": true,
+            "swDEq": true,
+            "tickerTargets": [
+              4,
+              2,
+              1
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_signal"
+            ],
+            [
+              "m_all"
+            ],
+            [
+              "adj_complete"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "n_machine"
+            ],
+            [
+              "v_activate"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 23,
+          "puzzleType": "SEQUENCE",
+          "unlockedControls": [
+            "route",
+            "conduit",
+            "lock",
+            "key",
+            "slider",
+            "dual_button"
+          ],
+          "memoryMode": true,
+          "plates": [
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_route"
+              ],
+              [
+                "d_3"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_conduit"
+              ],
+              [
+                "v_connect"
+              ]
+            ],
+            [
+              [
+                "d_3",
+                "m_ord"
+              ],
+              [
+                "n_lock"
+              ],
+              [
+                "v_unlock"
+              ]
+            ],
+            [
+              [
+                "d_4",
+                "m_ord"
+              ],
+              [
+                "n_key"
+              ],
+              [
+                "v_insert"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "d_0",
+                "m_ord"
+              ],
+              [
+                "n_slider"
+              ],
+              [
+                "v_swipe"
+              ],
+              [
+                "v_right"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_together"
+              ],
+              [
+                "v_push"
+              ],
+              [
+                "d_3",
+                "m_times"
+              ]
+            ]
+          ],
+          "initialState": {
+            "route": 1,
+            "conduit": "cut",
+            "lock": "locked",
+            "key": "out",
+            "slider": "left",
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_machine"
+              ],
+              [
+                "v_hide"
+              ]
+            ],
+            "secondaryMessage": []
+          },
+          "sequenceSteps": [
+            {
+              "trigger": "route_3",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_route"
+                ],
+                [
+                  "d_3",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "conduit_connect",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_conduit"
+                ],
+                [
+                  "v_connect",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "lock_unlock",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_lock"
+                ],
+                [
+                  "v_unlock",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "key_insert",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_key"
+                ],
+                [
+                  "v_insert",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "slider_right",
+              "repeatCount": 1,
+              "hintPrimary": [
+                [
+                  "n_slider"
+                ],
+                [
+                  "v_right",
+                  "m_not"
+                ]
+              ]
+            },
+            {
+              "trigger": "dual_push",
+              "repeatCount": 3,
+              "hintPrimary": [
+                [
+                  "n_button",
+                  "d_2"
+                ],
+                [
+                  "m_together",
+                  "m_not"
+                ]
+              ]
+            }
+          ],
+          "completionPrimary": [
+            [
+              "n_core"
+            ],
+            [
+              "v_activate"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 24,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "route",
+            "dial",
+            "valve",
+            "order_pad"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b"
+            ],
+            "sw_b": [
+              "sw_c"
+            ],
+            "sw_c": []
+          },
+          "plates": [
+            [
+              [
+                "n_switch"
+              ],
+              [
+                "m_all"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_route"
+              ],
+              [
+                "d_2"
+              ],
+              [
+                "v_match"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "m_same"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_1",
+                "d_3",
+                "d_0"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_2"
+              ],
+              [
+                "m_first"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_4"
+              ],
+              [
+                "d_2",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_3"
+              ],
+              [
+                "d_4",
+                "m_after"
+              ],
+              [
+                "v_push"
+              ]
+            ],
+            [
+              [
+                "n_button",
+                "d_1"
+              ],
+              [
+                "m_last"
+              ],
+              [
+                "v_push"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": true,
+            "swC": false,
+            "route": 1,
+            "dial": 5,
+            "valve": 24,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_core"
+              ],
+              [
+                "v_stop"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_lamp"
+              ],
+              [
+                "v_close"
+              ]
+            ]
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": true,
+            "swCEq": true,
+            "routeEq": 2,
+            "dialEqualsValve": true,
+            "dialPlusValveEq": 40,
+            "orderSequence": [
+              2,
+              4,
+              3,
+              1
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_core",
+              "n_gate"
+            ],
+            [
+              "v_open"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ]
+          ]
+        },
+        {
+          "levelNumber": 25,
+          "puzzleType": "CONDITION",
+          "unlockedControls": [
+            "sw_a",
+            "sw_b",
+            "sw_c",
+            "sw_d",
+            "route",
+            "dial",
+            "valve",
+            "hold_button"
+          ],
+          "switchLinks": {
+            "sw_a": [
+              "sw_b"
+            ],
+            "sw_b": [
+              "sw_c"
+            ],
+            "sw_c": [
+              "sw_d"
+            ],
+            "sw_d": []
+          },
+          "tickerEnabled": true,
+          "tickerIntervalMs": 1800,
+          "tickerSequence": [
+            0,
+            2,
+            4,
+            1,
+            3
+          ],
+          "plates": [
+            [
+              [
+                "n_switch",
+                "d_1"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_switch",
+                "d_3"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_switch",
+                "d_4"
+              ],
+              [
+                "v_activate"
+              ]
+            ],
+            [
+              [
+                "n_switch",
+                "d_2"
+              ],
+              [
+                "v_activate",
+                "m_not"
+              ]
+            ],
+            [
+              [
+                "n_route"
+              ],
+              [
+                "d_3"
+              ],
+              [
+                "v_match"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "m_same"
+              ]
+            ],
+            [
+              [
+                "n_dial"
+              ],
+              [
+                "op_and"
+              ],
+              [
+                "n_valve"
+              ],
+              [
+                "v_match"
+              ],
+              [
+                "d_1",
+                "d_1",
+                "d_0"
+              ]
+            ],
+            [
+              [
+                "d_1",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_4"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_hold"
+              ]
+            ],
+            [
+              [
+                "d_2",
+                "m_ord"
+              ],
+              [
+                "n_signal"
+              ],
+              [
+                "d_0"
+              ],
+              [
+                "m_if"
+              ],
+              [
+                "v_hold"
+              ]
+            ]
+          ],
+          "initialState": {
+            "swA": false,
+            "swB": false,
+            "swC": true,
+            "swD": false,
+            "route": 1,
+            "dial": 4,
+            "valve": 22,
+            "lamp": "amber",
+            "primaryMessage": [
+              [
+                "n_core"
+              ],
+              [
+                "v_stop"
+              ]
+            ],
+            "secondaryMessage": [
+              [
+                "n_signal"
+              ],
+              [
+                "v_flow"
+              ]
+            ]
+          },
+          "requirements": {
+            "swAEq": true,
+            "swBEq": false,
+            "swCEq": true,
+            "swDEq": true,
+            "routeEq": 3,
+            "dialEqualsValve": true,
+            "dialPlusValveEq": 30,
+            "requireHold": true,
+            "tickerTargets": [
+              4,
+              0
+            ]
+          },
+          "completionPrimary": [
+            [
+              "n_core",
+              "n_machine"
+            ],
+            [
+              "m_all"
+            ],
+            [
+              "v_activate"
+            ]
+          ],
+          "completionSecondary": [
+            [
+              "adj_complete"
+            ],
+            [
+              "n_ahead"
+            ],
+            [
+              "v_proceed"
+            ]
+          ]
+        }
+      ]
     }
   ]
 }

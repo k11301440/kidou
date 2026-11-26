@@ -2,8 +2,12 @@ package com.kidou.game.viewmodel
 
 import android.app.Activity
 import android.app.Application
+import android.content.Intent
+import android.os.SystemClock
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.kidou.game.BuildConfig
 import com.kidou.game.ads.AdLoadState
 import com.kidou.game.ads.RewardedAdManager
 import com.kidou.game.audio.BgmPlayer
@@ -12,9 +16,11 @@ import com.kidou.game.data.SaveRepository
 import com.kidou.game.engine.Base5
 import com.kidou.game.engine.GameDataLoader
 import com.kidou.game.engine.LevelEngine
+import com.kidou.game.engine.RtaLevelGenerator
 import com.kidou.game.model.AppLanguage
 import com.kidou.game.model.DictionaryEntry
 import com.kidou.game.model.EntrySource
+import com.kidou.game.model.LevelDef
 import com.kidou.game.model.LevelRuntimeState
 import com.kidou.game.model.LoadedGameData
 import com.kidou.game.model.OperationLogEntry
@@ -22,6 +28,8 @@ import com.kidou.game.model.SaveDataV2
 import com.kidou.game.model.SoundEffect
 import com.kidou.game.model.TranslationStats
 import com.kidou.game.model.WordColorTag
+import com.kidou.game.playgames.PlayGamesManager
+import com.kidou.game.playgames.PlayGamesStatus
 import com.kidou.game.ui.theme.ColorTheme
 import com.kidou.game.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +42,7 @@ enum class ScreenRoute {
   TITLE,
   BOARD,
   LEVEL,
+  RTA,
 }
 
 enum class DictionaryTab {
@@ -46,11 +55,24 @@ enum class MenuTab {
   SETTINGS,
 }
 
+data class RtaRunState(
+  val levels: List<LevelDef>,
+  val currentIndex: Int = 0,
+  val activeLevelState: LevelRuntimeState,
+  val startElapsedMs: Long = 0L,
+  val elapsedMs: Long = 0L,
+  val finished: Boolean = false,
+  val isNewBest: Boolean = false,
+) {
+  val currentLevelDef: LevelDef get() = levels[currentIndex]
+}
+
 data class GameUiState(
   val gameData: LoadedGameData? = null,
   val route: ScreenRoute = ScreenRoute.TITLE,
   val selectedBoardId: Int = 1,
   val activeLevelState: LevelRuntimeState? = null,
+  val rtaRun: RtaRunState? = null,
   val clearedLevelKeys: Set<String> = emptySet(),
   val dictionary: Map<String, DictionaryEntry> = emptyMap(),
   val discoveredWordIds: Set<String> = emptySet(),
@@ -62,6 +84,12 @@ data class GameUiState(
   val language: AppLanguage = AppLanguage.JA,
   val themeMode: ThemeMode = ThemeMode.DARK,
   val colorTheme: ColorTheme = ColorTheme.AMBER_RUIN,
+  val rtaBestTimeMs: Long? = null,
+  val rtaClearCount: Int = 0,
+  val playGamesOptIn: Boolean = false,
+  val unlockedAchievements: Set<String> = emptySet(),
+  val playGamesStatus: PlayGamesStatus = PlayGamesStatus(),
+  val playGamesToast: String? = null,
   val editingWordId: String? = null,
   val showDictionary: Boolean = false,
   val dictionaryTab: DictionaryTab = DictionaryTab.SCREEN,
@@ -78,17 +106,17 @@ data class GameUiState(
       return LevelEngine.computeTranslationStats(data, discoveredWordIds, dictionary, language)
     }
 
-  val board1Clears: Int
-    get() = LevelEngine.countBoardClears(1, clearedLevelKeys)
+  val board1Clears: Int get() = LevelEngine.countBoardClears(1, clearedLevelKeys)
+  val board2Clears: Int get() = LevelEngine.countBoardClears(2, clearedLevelKeys)
+  val board3Clears: Int get() = LevelEngine.countBoardClears(3, clearedLevelKeys)
+  val board4Clears: Int get() = LevelEngine.countBoardClears(4, clearedLevelKeys)
+  val board5Clears: Int get() = LevelEngine.countBoardClears(5, clearedLevelKeys)
+  val totalClears: Int
+    get() =
+      board1Clears + board2Clears + board3Clears + board4Clears + board5Clears
 
-  val board2Clears: Int
-    get() = LevelEngine.countBoardClears(2, clearedLevelKeys)
-
-  val board3Clears: Int
-    get() = LevelEngine.countBoardClears(3, clearedLevelKeys)
-
-  val board4Clears: Int
-    get() = LevelEngine.countBoardClears(4, clearedLevelKeys)
+  val isFinalLevelCleared: Boolean
+    get() = LevelEngine.isFinalLevelCleared(clearedLevelKeys)
 
   val isBoard2Unlocked: Boolean
     get() {
@@ -120,6 +148,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   private val soundSynth = SoundSynth()
   private val bgmPlayer = BgmPlayer(application.applicationContext)
   private val rewardedAdManager = RewardedAdManager()
+  private val playGamesManager = PlayGamesManager(application.applicationContext, saveRepository)
   private val gameData: LoadedGameData = GameDataLoader.loadFromAssets(application.applicationContext)
 
   private val _uiState = MutableStateFlow(loadInitialUiState())
@@ -137,6 +166,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             adErrorToast = if (adSt == AdLoadState.READY) false else it.adErrorToast,
           )
         }
+      }
+    }
+    viewModelScope.launch {
+      playGamesManager.status.collect { pgStatus ->
+        _uiState.update { it.copy(playGamesStatus = pgStatus) }
       }
     }
   }
@@ -173,12 +207,21 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
       language = language,
       themeMode = saved?.themeMode ?: ThemeMode.DARK,
       colorTheme = saved?.colorTheme ?: ColorTheme.AMBER_RUIN,
+      rtaBestTimeMs = saved?.rtaBestTimeMs,
+      rtaClearCount = saved?.rtaClearCount ?: 0,
+      playGamesOptIn = saved?.playGamesOptIn ?: false,
+      unlockedAchievements = saved?.unlockedAchievements ?: emptySet(),
     )
   }
 
-  fun onForeground() {
+  fun onForeground(activity: Activity? = null) {
     bgmPlayer.onForeground(_uiState.value.bgmEnabled)
     rewardedAdManager.preload(getApplication())
+    playGamesManager.checkAuthState(activity) { authed ->
+      if (authed && _uiState.value.playGamesOptIn) {
+        syncPlayGamesAchievements(activity)
+      }
+    }
   }
 
   fun onBackground() {
@@ -202,6 +245,156 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         discoveredWordIds = it.discoveredWordIds + boardWords,
       )
     }
+  }
+
+  fun startRtaRun(seed: Long = System.currentTimeMillis()) {
+    val state = _uiState.value
+    if (!state.isFinalLevelCleared) return
+    val generated = RtaLevelGenerator.generateRun(seed = seed, count = 10, validWordIds = gameData.words.keys)
+    if (BuildConfig.DEBUG) {
+      generated.forEachIndexed { idx, gen ->
+        val req = gen.levelDef.requirements
+        Log.d(
+          "KIDOU_RTA",
+          "IDX=$idx|ARCH=${gen.archetype.name}|SEQ=${gen.levelDef.tickerSequence.joinToString(",")}|TARGETS=${req?.tickerTargets?.joinToString(",") ?: ""}|HOLD=${req?.requireHold == true}|TRIGGERS=${gen.solutionTriggers.joinToString(",")}",
+        )
+      }
+    }
+    val defs = generated.map { it.levelDef }
+    if (defs.isEmpty()) return
+    val firstState = LevelEngine.createInitialState(0, defs.first())
+    val screenWords = LevelEngine.collectLevelScreenWordIds(defs.first(), firstState)
+    val nowMono = SystemClock.elapsedRealtime()
+    soundSynth.play(SoundEffect.CHIME, state.soundEnabled)
+    _uiState.update {
+      it.copy(
+        route = ScreenRoute.RTA,
+        activeLevelState = null,
+        rtaRun =
+          RtaRunState(
+            levels = defs,
+            currentIndex = 0,
+            activeLevelState = firstState,
+            startElapsedMs = nowMono,
+            elapsedMs = 0L,
+            finished = false,
+            isNewBest = false,
+          ),
+        screenWordIds = screenWords,
+        discoveredWordIds = it.discoveredWordIds + screenWords,
+      )
+    }
+  }
+
+  fun tickRtaTimer() {
+    val run = _uiState.value.rtaRun ?: return
+    if (run.finished) return
+    val elapsed = (SystemClock.elapsedRealtime() - run.startElapsedMs).coerceAtLeast(0L)
+    _uiState.update { cur ->
+      val activeRun = cur.rtaRun ?: return@update cur
+      if (activeRun.finished) cur else cur.copy(rtaRun = activeRun.copy(elapsedMs = elapsed))
+    }
+  }
+
+  fun tickActiveRtaTicker() {
+    val run = _uiState.value.rtaRun ?: return
+    if (run.finished) return
+    val levelDef = run.currentLevelDef
+    if (!levelDef.tickerEnabled || run.activeLevelState.isCleared) return
+    val nextLevelState = LevelEngine.advanceTicker(levelDef, run.activeLevelState)
+    if (nextLevelState != run.activeLevelState) {
+      val digitWord = Base5.toDigitWordIds(nextLevelState.tickerDigit)
+      _uiState.update { cur ->
+        val activeRun = cur.rtaRun ?: return@update cur
+        cur.copy(
+          rtaRun = activeRun.copy(activeLevelState = nextLevelState),
+          discoveredWordIds = cur.discoveredWordIds + digitWord,
+          screenWordIds = (cur.screenWordIds + digitWord).distinct(),
+        )
+      }
+    }
+  }
+
+  fun triggerRtaControl(trigger: String, activity: Activity? = null) {
+    val state = _uiState.value
+    val run = state.rtaRun ?: return
+    if (run.finished) return
+    val levelDef = run.currentLevelDef
+    val nowWall = System.currentTimeMillis()
+    logSequence = maxOf(logSequence + 1, nowWall)
+
+    val result =
+      LevelEngine.step(
+        levelDef = levelDef,
+        currentState = run.activeLevelState,
+        trigger = trigger,
+        timestampMs = nowWall,
+        logId = logSequence,
+      )
+    soundSynth.play(result.sound, state.soundEnabled)
+
+    if (result.newState.isCleared) {
+      val nextIdx = run.currentIndex + 1
+      if (nextIdx < run.levels.size) {
+        val nextDef = run.levels[nextIdx]
+        val nextLevelState = LevelEngine.createInitialState(0, nextDef)
+        val screenWords = LevelEngine.collectLevelScreenWordIds(nextDef, nextLevelState)
+        _uiState.update { cur ->
+          val activeRun = cur.rtaRun ?: return@update cur
+          cur.copy(
+            rtaRun =
+              activeRun.copy(
+                currentIndex = nextIdx,
+                activeLevelState = nextLevelState,
+                elapsedMs = (SystemClock.elapsedRealtime() - activeRun.startElapsedMs).coerceAtLeast(0L),
+              ),
+            screenWordIds = screenWords,
+            discoveredWordIds = cur.discoveredWordIds + result.newlyVisibleWordIds + screenWords,
+          )
+        }
+      } else {
+        val finalElapsed = (SystemClock.elapsedRealtime() - run.startElapsedMs).coerceAtLeast(1L)
+        val prevBest = state.rtaBestTimeMs
+        val isNewBest = prevBest == null || finalElapsed < prevBest
+        val newBest = if (isNewBest) finalElapsed else prevBest
+        _uiState.update { cur ->
+          val activeRun = cur.rtaRun ?: return@update cur
+          cur.copy(
+            rtaBestTimeMs = newBest,
+            rtaClearCount = cur.rtaClearCount + 1,
+            rtaRun =
+              activeRun.copy(
+                activeLevelState = result.newState,
+                elapsedMs = finalElapsed,
+                finished = true,
+                isNewBest = isNewBest,
+              ),
+            discoveredWordIds = cur.discoveredWordIds + result.newlyVisibleWordIds,
+          )
+        }
+        persist(activity)
+      }
+      return
+    }
+
+    val screenWords = LevelEngine.collectLevelScreenWordIds(levelDef, result.newState)
+    _uiState.update { cur ->
+      val activeRun = cur.rtaRun ?: return@update cur
+      cur.copy(
+        rtaRun =
+          activeRun.copy(
+            activeLevelState = result.newState,
+            elapsedMs = (SystemClock.elapsedRealtime() - activeRun.startElapsedMs).coerceAtLeast(0L),
+          ),
+        screenWordIds = screenWords,
+        discoveredWordIds = cur.discoveredWordIds + result.newlyVisibleWordIds + screenWords,
+      )
+    }
+  }
+
+  fun exitRtaToTitle() {
+    soundSynth.play(SoundEffect.CLICK, _uiState.value.soundEnabled)
+    _uiState.update { it.copy(route = ScreenRoute.TITLE, rtaRun = null) }
   }
 
   fun selectBoard(boardId: Int) {
@@ -255,7 +448,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
-  fun triggerControl(trigger: String) {
+  fun triggerControl(trigger: String, activity: Activity? = null) {
     val state = _uiState.value
     val levelState = state.activeLevelState ?: return
     val boardDef = gameData.boardCollection.boardById(levelState.boardId)
@@ -293,7 +486,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         operationLog = updatedLogs,
       )
     }
-    persist()
+    persist(if (result.newState.isCleared) activity else null)
   }
 
   fun openWordEditor(wordId: String) {
@@ -367,7 +560,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     _uiState.update { it.copy(adErrorToast = false) }
     rewardedAdManager.showAd(
       activity = activity,
-      onRewardEarned = { revealWordViaAd(wordId) },
+      onRewardEarned = { revealWordViaAd(wordId, activity) },
       onFailedOrClosed = { rewarded ->
         if (!rewarded) {
           _uiState.update { it.copy(adErrorToast = true) }
@@ -376,7 +569,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     )
   }
 
-  fun revealWordViaAd(wordId: String) {
+  fun revealWordViaAd(wordId: String, activity: Activity? = null) {
     val wordDef = gameData.words[wordId] ?: return
     _uiState.update { current ->
       val updatedMap = current.dictionary.toMutableMap()
@@ -395,7 +588,114 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         discoveredWordIds = current.discoveredWordIds + wordId,
       )
     }
+    persist(activity)
+  }
+
+  fun onPlayGamesEntryAction(
+    activity: Activity?,
+    onLaunchAchievements: (Intent) -> Unit,
+  ) {
+    _uiState.update { it.copy(playGamesOptIn = true, playGamesToast = null) }
     persist()
+
+    if (_uiState.value.playGamesStatus.isAuthenticated) {
+      syncPlayGamesAchievements(activity)
+      playGamesManager.openAchievementsUi(
+        activity = activity,
+        onIntentReady = onLaunchAchievements,
+        onUnavailable = { _uiState.update { it.copy(playGamesToast = "unavailable") } },
+      )
+      return
+    }
+
+    playGamesManager.requestSignIn(activity) { authed ->
+      if (authed) {
+        syncPlayGamesAchievements(activity)
+        playGamesManager.saveToCloud(activity, toSaveData(_uiState.value))
+        playGamesManager.openAchievementsUi(
+          activity = activity,
+          onIntentReady = onLaunchAchievements,
+          onUnavailable = { _uiState.update { it.copy(playGamesToast = "unavailable") } },
+        )
+      } else {
+        _uiState.update { it.copy(playGamesToast = "unavailable") }
+      }
+    }
+  }
+
+  fun restoreFromCloud(activity: Activity?) {
+    val current = _uiState.value
+    if (!current.playGamesOptIn || !current.playGamesStatus.isAuthenticated) {
+      _uiState.update { it.copy(playGamesToast = "unavailable") }
+      return
+    }
+    playGamesManager.restoreFromCloud(
+      activity = activity,
+      localSave = toSaveData(current),
+      onMerged = { merged ->
+        val language = merged.language
+        val boardDef = gameData.boardCollection.boardById(merged.selectedBoardId)
+        val boardWords = LevelEngine.collectBoardScreenWordIds(boardDef)
+        val rebuiltDict =
+          LevelEngine.buildDefaultDictionary(
+            data = gameData,
+            language = language,
+            existing = merged.dictionary,
+          )
+        _uiState.update {
+          it.copy(
+            selectedBoardId = merged.selectedBoardId,
+            clearedLevelKeys = merged.clearedLevelKeys,
+            dictionary = rebuiltDict,
+            discoveredWordIds = merged.discoveredWordIds + boardWords,
+            operationLog = merged.operationLog,
+            soundEnabled = merged.soundEnabled,
+            bgmEnabled = merged.bgmEnabled,
+            hapticsEnabled = merged.hapticsEnabled ?: true,
+            language = language,
+            themeMode = merged.themeMode,
+            colorTheme = merged.colorTheme,
+            rtaBestTimeMs = merged.rtaBestTimeMs,
+            rtaClearCount = merged.rtaClearCount,
+            playGamesOptIn = merged.playGamesOptIn,
+            unlockedAchievements = merged.unlockedAchievements,
+            playGamesToast = "restored",
+          )
+        }
+        persist(activity)
+      },
+      onUnavailable = {
+        val msgKey = playGamesManager.status.value.statusMessageKey ?: "unavailable"
+        _uiState.update { it.copy(playGamesToast = msgKey) }
+      },
+    )
+  }
+
+  fun disconnectPlayGames() {
+    playGamesManager.disconnect()
+    _uiState.update { it.copy(playGamesOptIn = false, playGamesToast = null) }
+    persist()
+  }
+
+  fun clearPlayGamesToast() {
+    _uiState.update { it.copy(playGamesToast = null) }
+  }
+
+  private fun syncPlayGamesAchievements(activity: Activity?) {
+    val state = _uiState.value
+    if (!state.playGamesOptIn) return
+    val save = toSaveData(state)
+    val updatedUnlocked =
+      playGamesManager.syncAchievements(
+        activity = activity,
+        data = gameData,
+        save = save,
+        translationPercent = state.translationStats.percent,
+      )
+    if (updatedUnlocked != state.unlockedAchievements) {
+      _uiState.update { it.copy(unlockedAchievements = updatedUnlocked) }
+      saveRepository.save(save.copy(unlockedAchievements = updatedUnlocked))
+    }
   }
 
   fun openDictionary(tab: DictionaryTab = DictionaryTab.SCREEN) {
@@ -572,6 +872,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     persist()
   }
 
+  fun debugFill24ClearsForBoard5() {
+    val b1To4Keys = (1..4).flatMap { b -> (1..25).map { LevelEngine.levelKey(b, it) } }
+    val b5Keys = (1..24).map { LevelEngine.levelKey(5, it) }
+    _uiState.update { current ->
+      current.copy(clearedLevelKeys = current.clearedLevelKeys + b1To4Keys + b5Keys)
+    }
+    persist()
+  }
+
   fun resetAll() {
     saveRepository.clear()
     val state = _uiState.value
@@ -584,11 +893,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         route = ScreenRoute.BOARD,
         selectedBoardId = 1,
         activeLevelState = null,
+        rtaRun = null,
         clearedLevelKeys = emptySet(),
         dictionary = defaultDict,
         discoveredWordIds = boardWords.toSet(),
         screenWordIds = boardWords,
         operationLog = emptyList(),
+        rtaBestTimeMs = null,
+        rtaClearCount = 0,
+        unlockedAchievements = emptySet(),
         editingWordId = null,
         showDictionary = false,
         showMenu = false,
@@ -602,6 +915,19 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
   fun findWordContexts(wordId: String): List<List<List<String>>> {
     val state = _uiState.value
     val result = LinkedHashSet<List<List<String>>>()
+
+    val rtaState = state.rtaRun
+    if (state.route == ScreenRoute.RTA && rtaState != null) {
+      rtaState.currentLevelDef.plates.forEach { plate ->
+        if (plate.any { wordId in it }) result.add(plate)
+      }
+      if (rtaState.activeLevelState.primaryMessage.any { wordId in it }) {
+        result.add(rtaState.activeLevelState.primaryMessage)
+      }
+      if (rtaState.activeLevelState.secondaryMessage.any { wordId in it }) {
+        result.add(rtaState.activeLevelState.secondaryMessage)
+      }
+    }
 
     val levelState = state.activeLevelState
     if (levelState != null) {
@@ -631,22 +957,33 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     return result.take(8)
   }
 
-  private fun persist() {
-    val state = _uiState.value
-    saveRepository.save(
-      SaveDataV2(
-        dictionary = state.dictionary,
-        discoveredWordIds = state.discoveredWordIds,
-        clearedLevelKeys = state.clearedLevelKeys,
-        operationLog = state.operationLog,
-        soundEnabled = state.soundEnabled,
-        bgmEnabled = state.bgmEnabled,
-        hapticsEnabled = state.hapticsEnabled,
-        language = state.language,
-        themeMode = state.themeMode,
-        colorTheme = state.colorTheme,
-        selectedBoardId = state.selectedBoardId,
-      )
+  private fun toSaveData(state: GameUiState): SaveDataV2 =
+    SaveDataV2(
+      dictionary = state.dictionary,
+      discoveredWordIds = state.discoveredWordIds,
+      clearedLevelKeys = state.clearedLevelKeys,
+      operationLog = state.operationLog,
+      soundEnabled = state.soundEnabled,
+      bgmEnabled = state.bgmEnabled,
+      hapticsEnabled = state.hapticsEnabled,
+      language = state.language,
+      themeMode = state.themeMode,
+      colorTheme = state.colorTheme,
+      selectedBoardId = state.selectedBoardId,
+      rtaBestTimeMs = state.rtaBestTimeMs,
+      rtaClearCount = state.rtaClearCount,
+      playGamesOptIn = state.playGamesOptIn,
+      unlockedAchievements = state.unlockedAchievements,
+      updatedAtMs = System.currentTimeMillis(),
     )
+
+  private fun persist(activity: Activity? = null) {
+    val state = _uiState.value
+    val data = toSaveData(state)
+    saveRepository.save(data)
+    if (state.playGamesOptIn && activity != null) {
+      syncPlayGamesAchievements(activity)
+      playGamesManager.saveToCloud(activity, toSaveData(_uiState.value))
+    }
   }
 }

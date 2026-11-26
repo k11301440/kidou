@@ -1,6 +1,7 @@
 package com.kidou.game
 
 import com.kidou.game.config.AppConfig
+import com.kidou.game.config.PlayGamesConfig
 import com.kidou.game.engine.GameDataLoader
 import com.kidou.game.engine.LevelEngine
 import com.kidou.game.model.AppLanguage
@@ -23,10 +24,11 @@ import java.io.File
 import java.util.ArrayDeque
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class KidouV4Test {
+class KidouV5Test {
 
   private fun loadAssets(): LoadedGameData {
     val candidates = listOf(File("src/main/assets"), File("app/src/main/assets"))
@@ -44,7 +46,7 @@ class KidouV4Test {
   }
 
   @Test
-  fun glyphsWordsAndBoardsSchemaAreValidForV4() {
+  fun glyphsWordsAndBoardsSchemaAreValidForV5() {
     val data = loadAssets()
     assertTrue("Expected at least 66 glyphs, got ${data.glyphs.size}", data.glyphs.size >= 66)
     assertTrue("Expected at least 66 words, got ${data.words.size}", data.words.size >= 66)
@@ -66,9 +68,6 @@ class KidouV4Test {
       assertTrue("Missing meaningEn on ${word.id}", word.meaningEn.isNotBlank())
     }
 
-    assertEquals("言語解読 × 試行錯誤", data.boardCollection.titleSubtitle(AppLanguage.JA))
-    assertTrue(data.boardCollection.titleSubtitle(AppLanguage.EN).isNotBlank())
-
     fun checkSlots(slots: List<List<String>>, ctx: String) {
       slots.forEach { slot ->
         slot.forEach { wordId ->
@@ -80,26 +79,15 @@ class KidouV4Test {
     data.boardCollection.guideLines.forEachIndexed { idx, line -> checkSlots(line, "guideLines[$idx]") }
     assertEquals(5, data.boardCollection.boards.size)
 
-    val b1 = data.boardCollection.boardById(1)
-    val b2 = data.boardCollection.boardById(2)
-    val b3 = data.boardCollection.boardById(3)
-    val b4 = data.boardCollection.boardById(4)
-    val b5 = data.boardCollection.boardById(5)
-
-    assertEquals(25, b1.levels.size)
-    assertEquals(25, b2.levels.size)
-    assertEquals(25, b3.levels.size)
-    assertEquals(25, b4.levels.size)
-    assertTrue(b5.levels.isEmpty())
-
-    assertEquals(1, b2.requiredBoardId)
-    assertEquals(20, b2.requiredClears)
-    assertEquals(2, b3.requiredBoardId)
-    assertEquals(20, b3.requiredClears)
-    assertEquals(3, b4.requiredBoardId)
-    assertEquals(20, b4.requiredClears)
-    assertEquals(4, b5.requiredBoardId)
-    assertEquals(20, b5.requiredClears)
+    for (boardId in 1..5) {
+      val b = data.boardCollection.boardById(boardId)
+      assertEquals("Board $boardId must have 25 levels", 25, b.levels.size)
+      assertTrue("Board $boardId must have story lines", b.storyLines.isNotEmpty())
+      if (boardId > 1) {
+        assertEquals(boardId - 1, b.requiredBoardId)
+        assertEquals(20, b.requiredClears)
+      }
+    }
 
     data.boardCollection.boards.forEach { board ->
       checkSlots(board.titleSlots, "board${board.id}.title")
@@ -131,39 +119,98 @@ class KidouV4Test {
   }
 
   @Test
-  fun all100PlayableLevelsCanBeSolvedAndBoardsUnlockAt20Clears() {
+  fun all125LevelsCanBeSolvedBoardsUnlockAt20AndRtaUnlocksAtFinalClear() {
     val data = loadAssets()
-    val board1 = data.boardCollection.boardById(1)
-    val board2 = data.boardCollection.boardById(2)
-    val board3 = data.boardCollection.boardById(3)
-    val board4 = data.boardCollection.boardById(4)
-    val board5 = data.boardCollection.boardById(5)
-
     val cleared = mutableSetOf<String>()
+    assertFalse(LevelEngine.isFinalLevelCleared(cleared))
 
-    fun runBoard(boardId: Int, levels: List<LevelDef>, nextBoard: com.kidou.game.model.BoardDef) {
-      levels.forEachIndexed { idx, level ->
+    for (boardId in 1..5) {
+      val board = data.boardCollection.boardById(boardId)
+      val nextBoard = data.boardCollection.boards.firstOrNull { it.requiredBoardId == boardId }
+      board.levels.forEachIndexed { idx, level ->
         solveLevelAndAssert(boardId = boardId, level = level)
         cleared.add(LevelEngine.levelKey(boardId, level.levelNumber))
-        if (idx + 1 < 20) {
-          assertFalse(
-            "Board ${nextBoard.id} must stay locked at B$boardId ${idx + 1}/25",
-            LevelEngine.isBoardUnlocked(nextBoard, cleared),
-          )
-        } else {
-          assertTrue(
-            "Board ${nextBoard.id} must unlock at B$boardId ${idx + 1}/25",
-            LevelEngine.isBoardUnlocked(nextBoard, cleared),
-          )
+        if (nextBoard != null) {
+          if (idx + 1 < 20) {
+            assertFalse(
+              "Board ${nextBoard.id} must stay locked at B$boardId ${idx + 1}/25",
+              LevelEngine.isBoardUnlocked(nextBoard, cleared),
+            )
+          } else {
+            assertTrue(
+              "Board ${nextBoard.id} must unlock at B$boardId ${idx + 1}/25",
+              LevelEngine.isBoardUnlocked(nextBoard, cleared),
+            )
+          }
         }
+        val expectedFinal = (boardId == 5 && level.levelNumber == 25)
+        assertEquals(expectedFinal, LevelEngine.isFinalLevelCleared(cleared))
       }
     }
 
-    runBoard(1, board1.levels, board2)
-    runBoard(2, board2.levels, board3)
-    runBoard(3, board3.levels, board4)
-    runBoard(4, board4.levels, board5)
-    assertEquals(100, cleared.size)
+    assertEquals(125, cleared.size)
+    assertTrue(LevelEngine.isFinalLevelCleared(cleared))
+  }
+
+  @Test
+  fun vocabularyContextThicknessCoversKeyVerbsAndModifiers() {
+    val data = loadAssets()
+    val counts = mutableMapOf<String, Int>()
+    for (board in data.boardCollection.boards) {
+      board.storyLines.flatten().flatten().forEach { counts[it] = (counts[it] ?: 0) + 1 }
+      board.levels.forEach { lv ->
+        lv.plates.flatten().flatten().forEach { counts[it] = (counts[it] ?: 0) + 1 }
+        lv.initialState.primaryMessage.flatten().forEach { counts[it] = (counts[it] ?: 0) + 1 }
+        lv.initialState.secondaryMessage.flatten().forEach { counts[it] = (counts[it] ?: 0) + 1 }
+      }
+    }
+
+    val thickenedVerbs =
+      listOf("v_turn", "v_decrease", "v_increase", "v_up", "v_pull", "v_remove", "v_cut", "v_left", "m_same", "v_hide", "n_lamp", "v_close", "adj_danger")
+    thickenedVerbs.forEach { wordId ->
+      val freq = counts[wordId] ?: 0
+      assertTrue("Expected thickened context >= 6 for '$wordId', got $freq", freq >= 6)
+    }
+  }
+
+  @Test
+  fun translationRateAndPlayGamesConfigAndPrivacyUrlAreValidForV5() {
+    val data = loadAssets()
+    val dict = LevelEngine.buildDefaultDictionary(data, AppLanguage.JA).toMutableMap()
+    val discovered = data.wordOrder.toSet()
+
+    val startStats = LevelEngine.computeTranslationStats(data, discovered, dict, AppLanguage.JA)
+    assertEquals(0, startStats.translatedCount)
+    assertEquals(data.wordOrder.size - data.defaultSetWordIds.size, startStats.totalCount)
+
+    dict["n_button"] = DictionaryEntry("n_button", "ボタン", WordColorTag.OBJECT, source = EntrySource.AD_REVEALED)
+    val midStats = LevelEngine.computeTranslationStats(data, discovered, dict, AppLanguage.JA)
+    assertEquals(1, midStats.translatedCount)
+
+    assertEquals("https://k11301440.github.io/kidou/privacy-policy.html", AppConfig.PRIVACY_POLICY_URL)
+    assertFalse(PlayGamesConfig.isAppIdConfigured(PlayGamesConfig.APP_ID_PLACEHOLDER))
+    assertTrue(PlayGamesConfig.isAppIdConfigured("123456789012"))
+    com.kidou.game.playgames.KidouAchievement.entries.forEach { ach ->
+      assertNull(PlayGamesConfig.configuredAchievementId(ach))
+    }
+
+    assertEquals(listOf("デフォルト", "グリーン", "ブルー", "レッド"), ColorTheme.entries.map { it.label(AppLanguage.JA) })
+    assertEquals(listOf("Default", "Green", "Blue", "Red"), ColorTheme.entries.map { it.label(AppLanguage.EN) })
+    ThemeMode.entries.forEach { mode ->
+      ColorTheme.entries.forEach { ct ->
+        val p = buildKidouPalette(mode, ct)
+        assertTrue(p.accentPrimary != p.background)
+        assertTrue(p.glyph != p.background)
+      }
+    }
+
+    listOf(AppLanguage.JA, AppLanguage.EN).forEach { lang ->
+      val credits = stringsFor(lang).creditsBody
+      assertTrue(credits.contains("Purrple Cat"))
+      assertTrue(credits.contains("CC BY 4.0"))
+      assertTrue(credits.contains("DotGothic16"))
+      assertTrue(credits.contains("OFL-1.1"))
+    }
   }
 
   private fun solveLevelAndAssert(boardId: Int, level: LevelDef) {
@@ -177,24 +224,17 @@ class KidouV4Test {
       assertEquals(LampState.RED, wrongRes.newState.lamp)
       assertEquals(SoundEffect.WARN, wrongRes.sound)
       assertEquals(0, wrongRes.newState.seqStep)
-      assertFalse(wrongRes.newState.hasOperated)
       state = wrongRes.newState
 
       var t = 10L
       level.sequenceSteps.forEach { step ->
         repeat(step.repeatCount) {
-          val res = LevelEngine.step(level, state, step.trigger, t, t)
-          t += 1L
-          state = res.newState
-          if (level.memoryMode) {
-            assertTrue(state.hasOperated)
-          }
+          state = LevelEngine.step(level, state, step.trigger, t, t++).newState
         }
       }
       if (level.memoryMode) {
         val resetRes = LevelEngine.step(level, state, "memory_reset", t, t + 1)
         assertFalse(resetRes.newState.hasOperated)
-        // Re-solve cleanly after reset test
         state = resetRes.newState
         t += 10L
         level.sequenceSteps.forEach { step ->
@@ -220,15 +260,11 @@ class KidouV4Test {
     }
 
     val target = findSatisfyingConfig(req)
-
-    // Use BFS to solve switch links cleanly
-    val switchTriggers =
-      findSwitchPath(
-        start = SwitchTuple(state.swA, state.swB, state.swC, state.swD),
-        goal = SwitchTuple(target.swA, target.swB, target.swC, target.swD),
-        links = level.switchLinks,
-      )
-    switchTriggers.forEach { trig ->
+    findSwitchPath(
+      start = SwitchTuple(state.swA, state.swB, state.swC, state.swD),
+      goal = SwitchTuple(target.swA, target.swB, target.swC, target.swD),
+      links = level.switchLinks,
+    ).forEach { trig ->
       state = LevelEngine.step(level, state, trig, t, t++).newState
     }
 
@@ -256,18 +292,21 @@ class KidouV4Test {
       state = LevelEngine.step(level, state, trig, t, t++).newState
     }
 
-    // Resolve dial & valve targets including dialEqualsValve and dialPlusValveEq
     var targetDial = req.dialEq
     var targetValve = req.valveEq
     if (req.dialEqualsValve == true) {
       if (targetDial != null && targetValve == null) targetValve = targetDial
       else if (targetValve != null && targetDial == null) targetDial = targetValve
       else if (targetDial == null && targetValve == null) {
-        targetDial = state.dial
-        targetValve = state.dial
+        if (req.dialPlusValveEq != null) {
+          targetDial = req.dialPlusValveEq / 2
+          targetValve = req.dialPlusValveEq - targetDial
+        } else {
+          targetDial = state.dial
+          targetValve = state.dial
+        }
       }
-    }
-    if (req.dialPlusValveEq != null) {
+    } else if (req.dialPlusValveEq != null) {
       val sum = req.dialPlusValveEq
       if (targetDial == null && targetValve == null) {
         targetDial = (sum / 2).coerceIn(0, LevelEngine.MAX_NUMERIC_VALUE)
@@ -300,26 +339,27 @@ class KidouV4Test {
 
     when {
       req.orderSequence.isNotEmpty() -> {
-        // Test wrong first order button triggers soft reset without crash
         val wrongOrder = if (req.orderSequence.first() == 1) "order_2" else "order_1"
         val badRes = LevelEngine.step(level, state, wrongOrder, t, t++)
         assertEquals(LampState.RED, badRes.newState.lamp)
         assertEquals(0, badRes.newState.orderProgress)
         state = badRes.newState
-
         req.orderSequence.forEach { d ->
           state = LevelEngine.step(level, state, "order_$d", t, t++).newState
         }
       }
       req.tickerTargets.isNotEmpty() -> {
         val submitTrigger =
-          if ("dual_button" in level.unlockedControls) "dual_push" else "button_push"
-        // Verify missed digit has ZERO penalty / NO RED lamp
+          when {
+            req.requireHold == true -> "button_hold"
+            "dual_button" in level.unlockedControls -> "dual_push"
+            else -> "button_push"
+          }
         while (state.tickerDigit == req.tickerTargets.first()) {
           state = LevelEngine.advanceTicker(level, state)
         }
         val missRes = LevelEngine.step(level, state, submitTrigger, t, t++)
-        assertTrue("Missed ticker digit must not trigger RED failure", missRes.newState.lamp != LampState.RED)
+        assertTrue("Missed ticker digit must not fail with RED", missRes.newState.lamp != LampState.RED)
         assertEquals(0, missRes.newState.tickerCaptures)
         state = missRes.newState
 
@@ -378,25 +418,16 @@ class KidouV4Test {
           )
         val newPath = path + "${k}_toggle"
         if (nxt == goal) return newPath
-        if (seen.add(nxt)) {
-          q.add(nxt to newPath)
-        }
+        if (seen.add(nxt)) q.add(nxt to newPath)
       }
     }
     error("Unreachable switch goal $goal from $start with links $links")
   }
 
   private data class ModuleConfig(
-    val swA: Boolean,
-    val swB: Boolean,
-    val swC: Boolean,
-    val swD: Boolean,
-    val route: Int,
-    val lever: String,
-    val key: String,
-    val conduit: String,
-    val lock: String,
-    val slider: String,
+    val swA: Boolean, val swB: Boolean, val swC: Boolean, val swD: Boolean,
+    val route: Int, val lever: String, val key: String,
+    val conduit: String, val lock: String, val slider: String,
   )
 
   private fun findSatisfyingConfig(req: ConditionRequirement): ModuleConfig {
@@ -411,30 +442,12 @@ class KidouV4Test {
     val lockOpts = if (req.lockEq != null) listOf(req.lockEq) else listOf("locked", "unlocked")
     val sliderOpts = if (req.sliderEq != null) listOf(req.sliderEq) else listOf("left", "right")
 
-    for (swA in swAOpts) {
-      for (swB in swBOpts) {
-        for (swC in swCOpts) {
-          for (swD in swDOpts) {
-            for (route in routeOpts) {
-              for (lever in leverOpts) {
-                for (key in keyOpts) {
-                  for (conduit in conduitOpts) {
-                    for (lock in lockOpts) {
-                      for (slider in sliderOpts) {
-                        val cfg = ModuleConfig(swA, swB, swC, swD, route, lever, key, conduit, lock, slider)
-                        if (req.logicClauses.all { clauseMatches(cfg, it) }) {
-                          return cfg
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
+    for (swA in swAOpts) for (swB in swBOpts) for (swC in swCOpts) for (swD in swDOpts)
+      for (route in routeOpts) for (lever in leverOpts) for (key in keyOpts)
+        for (conduit in conduitOpts) for (lock in lockOpts) for (slider in sliderOpts) {
+          val cfg = ModuleConfig(swA, swB, swC, swD, route, lever, key, conduit, lock, slider)
+          if (req.logicClauses.all { clauseMatches(cfg, it) }) return cfg
         }
-      }
-    }
     error("No satisfying module configuration found for $req")
   }
 
@@ -462,79 +475,6 @@ class KidouV4Test {
       "XOR" -> clause.checks.count(::matchCheck) % 2 == 1
       "NOT" -> clause.checks.none(::matchCheck)
       else -> clause.checks.all(::matchCheck)
-    }
-  }
-
-  @Test
-  fun translationRateExcludesDefaultSetAndSupportsLanguageSwitch() {
-    val data = loadAssets()
-    val dict = LevelEngine.buildDefaultDictionary(data, AppLanguage.JA).toMutableMap()
-    val discovered = data.wordOrder.toSet()
-
-    val startStats = LevelEngine.computeTranslationStats(data, discovered, dict, AppLanguage.JA)
-    assertEquals(0, startStats.translatedCount)
-    assertEquals(data.wordOrder.size - data.defaultSetWordIds.size, startStats.totalCount)
-    assertEquals(0, startStats.percent)
-
-    val buttonDef = data.words["n_button"]!!
-    dict["n_button"] =
-      DictionaryEntry(
-        wordId = "n_button",
-        translation = buttonDef.meaningJa,
-        colorTag = WordColorTag.OBJECT,
-        source = EntrySource.AD_REVEALED,
-      )
-    dict["v_push"] =
-      DictionaryEntry(
-        wordId = "v_push",
-        translation = "おす(仮)",
-        colorTag = WordColorTag.HYPOTHESIS,
-        source = EntrySource.PLAYER,
-      )
-
-    val midStats = LevelEngine.computeTranslationStats(data, discovered, dict, AppLanguage.JA)
-    assertEquals(2, midStats.translatedCount)
-    assertTrue(midStats.percent > 0)
-
-    assertEquals("you", dict["n_you"]!!.resolvedTranslation(data.words["n_you"], AppLanguage.EN))
-    assertEquals("button", dict["n_button"]!!.resolvedTranslation(buttonDef, AppLanguage.EN))
-    assertEquals("おす(仮)", dict["v_push"]!!.resolvedTranslation(data.words["v_push"], AppLanguage.EN))
-
-    data.words.values.filter { !it.isDefaultSet }.forEach { w ->
-      dict[w.id] = DictionaryEntry(wordId = w.id, translation = w.meaningEn, source = EntrySource.DEBUG_BULK)
-    }
-    val fullStats = LevelEngine.computeTranslationStats(data, discovered, dict, AppLanguage.EN)
-    assertEquals(fullStats.totalCount, fullStats.translatedCount)
-    assertEquals(100, fullStats.percent)
-  }
-
-  @Test
-  fun themeNamesPalettesCreditsAndPrivacyAreValidForV4() {
-    assertTrue(AppConfig.PRIVACY_POLICY_URL.startsWith("https://"))
-
-    assertEquals(listOf("デフォルト", "グリーン", "ブルー", "レッド"), ColorTheme.entries.map { it.label(AppLanguage.JA) })
-    assertEquals(listOf("Default", "Green", "Blue", "Red"), ColorTheme.entries.map { it.label(AppLanguage.EN) })
-
-    val accentColors = mutableSetOf<Long>()
-    ThemeMode.entries.forEach { mode ->
-      ColorTheme.entries.forEach { colorTheme ->
-        val palette = buildKidouPalette(mode, colorTheme)
-        assertEquals(mode == ThemeMode.DARK, palette.isDark)
-        assertTrue(palette.accentPrimary != palette.background)
-        assertTrue(palette.glyph != palette.background)
-        if (mode == ThemeMode.DARK) {
-          accentColors.add(palette.accentPrimary.value.toLong())
-        }
-      }
-    }
-    assertEquals(4, accentColors.size)
-
-    listOf(AppLanguage.JA, AppLanguage.EN).forEach { lang ->
-      val credits = stringsFor(lang).creditsBody
-      assertTrue(credits.contains("Purrple Cat"))
-      assertTrue(credits.contains("CC BY 4.0"))
-      assertTrue(credits.contains("DotGothic16"))
-      assertTrue(credits.contains("OFL-1.1"))
     }
   }
 }

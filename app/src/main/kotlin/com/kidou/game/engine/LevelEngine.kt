@@ -26,8 +26,13 @@ data class LevelStepResult(
 
 object LevelEngine {
   const val MAX_NUMERIC_VALUE = 25
+  const val FINAL_LEVEL_BOARD_ID = 5
+  const val FINAL_LEVEL_NUMBER = 25
 
   fun levelKey(boardId: Int, levelNumber: Int): String = "$boardId-$levelNumber"
+
+  fun isFinalLevelCleared(clearedLevelKeys: Set<String>): Boolean =
+    levelKey(FINAL_LEVEL_BOARD_ID, FINAL_LEVEL_NUMBER) in clearedLevelKeys
 
   fun createInitialState(boardId: Int, levelDef: LevelDef): LevelRuntimeState {
     val init = levelDef.initialState
@@ -831,6 +836,9 @@ object LevelEngine {
       ids.addAll(Base5.toDigitWordIds(n))
     }
     ids.add("adj_complete")
+    if (boardDef.id < FINAL_LEVEL_BOARD_ID) {
+      ids.addAll(listOf("n_board", "d_1", "d_0", "d_4", "m_among", "v_activate", "m_if", "m_next", "v_open"))
+    }
     return ids.toList()
   }
 

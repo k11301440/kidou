@@ -1,5 +1,8 @@
 package com.kidou.game.ui
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,18 +44,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidou.game.R
 import com.kidou.game.config.AppConfig
+import com.kidou.game.config.PlayGamesConfig
+import com.kidou.game.engine.Base5
+import com.kidou.game.engine.LevelEngine
 import com.kidou.game.model.AppLanguage
+import com.kidou.game.model.GlyphGrid
 import com.kidou.game.model.LampState
 import com.kidou.game.ui.components.PixelDivider
+import com.kidou.game.ui.components.PixelGlyph
+import com.kidou.game.ui.components.PixelLed
 import com.kidou.game.ui.components.rememberKidouHapticClick
 import com.kidou.game.ui.i18n.stringsFor
 import com.kidou.game.ui.theme.ColorTheme
@@ -74,12 +87,16 @@ fun MenuSheet(
   onSelectLanguage: (AppLanguage) -> Unit,
   onSelectThemeMode: (ThemeMode) -> Unit,
   onSelectColorTheme: (ColorTheme) -> Unit,
+  onPlayGamesConnectOrAchievements: () -> Unit,
+  onRestoreCloudSave: () -> Unit,
+  onDisconnectPlayGames: () -> Unit,
   onDebugBulkApply: () -> Unit,
   onDebugResetTranslations: () -> Unit,
   onDebugFill19ClearsBoard1: () -> Unit,
   onDebugFill19ClearsBoard2: () -> Unit,
   onDebugFill19ClearsBoard3: () -> Unit,
   onDebugFill19ClearsBoard4: () -> Unit,
+  onDebugFill24ClearsBoard5: () -> Unit,
   onResetAll: () -> Unit,
   onDismiss: () -> Unit,
 ) {
@@ -88,9 +105,11 @@ fun MenuSheet(
   val strings = stringsFor(uiState.language)
   val stats = uiState.translationStats
   val uriHandler = LocalUriHandler.current
+  val context = LocalContext.current
   val hapticClick = rememberKidouHapticClick()
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   var showResetConfirm by remember { mutableStateOf(false) }
+  var showDisconnectGuide by remember { mutableStateOf(false) }
 
   ModalBottomSheet(
     onDismissRequest = onDismiss,
@@ -135,43 +154,94 @@ fun MenuSheet(
 
       when (uiState.menuTab) {
         MenuTab.PROGRESS -> {
+          val totalPlayable = data.boardCollection.boards.sumOf { it.totalSlots }.coerceAtLeast(1)
           Column(
             modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
           ) {
-            StatRow(strings.board1ClearsLabel, "${uiState.board1Clears} / 25")
-            StatRow(
-              strings.board2StatusLabel,
-              if (uiState.isBoard2Unlocked) strings.unlocked else strings.locked,
+            // Overall Progress Bar Card (§4)
+            VisualBarProgressCard(
+              title = strings.overallProgressLabel,
+              valueLabel = "${uiState.totalClears} / $totalPlayable",
+              fraction = uiState.totalClears.toFloat() / totalPlayable.toFloat(),
+              barColor = palette.statusSuccess,
+              contentDesc = "progress_overall_bar",
             )
-            StatRow(strings.board2ClearsLabel, "${uiState.board2Clears} / 25")
-            StatRow(
-              strings.board3StatusLabel,
-              if (uiState.isBoard3Unlocked) strings.unlocked else strings.locked,
-            )
-            StatRow(strings.board3ClearsLabel, "${uiState.board3Clears} / 25")
-            StatRow(
-              strings.board4StatusLabel,
-              if (uiState.isBoard4Unlocked) strings.unlocked else strings.locked,
-            )
-            StatRow(strings.board4ClearsLabel, "${uiState.board4Clears} / 25")
-            StatRow(
-              strings.board5StatusLabel,
-              if (uiState.isBoard5Unlocked) strings.unlocked else strings.locked,
-            )
-            StatRow(
-              strings.discoveredWordsLabel,
-              "${uiState.discoveredWordIds.size} / ${data.wordOrder.size}",
-            )
-            StatRow(
-              strings.translatedWordsLabel,
-              "${stats.translatedCount} / ${stats.totalCount}",
-            )
-            StatRow(strings.translationRateLabel, "${stats.percent}%")
+
+            // Per-board 25-pip visual grids (Boards 1..5) (§4)
+            data.boardCollection.boards.forEach { board ->
+              val cleared = LevelEngine.countBoardClears(board.id, uiState.clearedLevelKeys)
+              val unlocked = LevelEngine.isBoardUnlocked(board, uiState.clearedLevelKeys)
+              VisualBoardProgressRow(
+                boardId = board.id,
+                clearedCount = cleared,
+                totalSlots = board.totalSlots,
+                threshold = if (board.id < 5) 20 else null,
+                unlocked = unlocked,
+                statusText = if (unlocked) strings.unlocked else strings.locked,
+                glyphs = data.glyphs,
+              )
+            }
+
+            // Lexicon & Translation Rate Visual Bars (§4)
+            Column(
+              modifier =
+                Modifier
+                  .fillMaxWidth()
+                  .background(palette.tile, RectangleShape)
+                  .border(1.dp, palette.border, RectangleShape)
+                  .padding(horizontal = 12.dp, vertical = 10.dp)
+                  .semantics { contentDescription = "progress_translation_bar" },
+              verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+              val totalWords = data.wordOrder.size.coerceAtLeast(1)
+              val discFraction = uiState.discoveredWordIds.size.toFloat() / totalWords.toFloat()
+              LabeledMiniBar(
+                label = strings.discoveredWordsLabel,
+                valueLabel = "${uiState.discoveredWordIds.size} / ${data.wordOrder.size}",
+                fraction = discFraction,
+                barColor = palette.accentSecondary,
+              )
+              val transFraction = stats.percent.coerceIn(0, 100) / 100f
+              LabeledMiniBar(
+                label = strings.translatedWordsLabel,
+                valueLabel = "${stats.translatedCount} / ${stats.totalCount} (${stats.percent}%)",
+                fraction = transFraction,
+                barColor = palette.accentPrimary,
+              )
+            }
+
+            if (uiState.isFinalLevelCleared || uiState.rtaBestTimeMs != null) {
+              Row(
+                modifier =
+                  Modifier
+                    .fillMaxWidth()
+                    .background(palette.tile, RectangleShape)
+                    .border(1.dp, palette.statusSuccess.copy(alpha = 0.6f), RectangleShape)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+              ) {
+                Text(
+                  text = strings.rtaBestTimeLabel,
+                  color = palette.muted,
+                  fontFamily = DotGothic16FontFamily,
+                  fontSize = 12.sp,
+                )
+                Text(
+                  text = uiState.rtaBestTimeMs?.let { formatRtaTime(it) } ?: strings.rtaNoneYet,
+                  color = palette.statusSuccess,
+                  fontFamily = DotGothic16FontFamily,
+                  fontSize = 13.sp,
+                )
+              }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
           }
         }
 
         MenuTab.SETTINGS -> {
+          val isLinked = uiState.playGamesOptIn && uiState.playGamesStatus.isAuthenticated
           Column(
             modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -205,6 +275,135 @@ fun MenuSheet(
               },
               contentDesc = "switch_haptics",
             )
+
+            // Google Play Games Services v2 Section (§3)
+            Column(
+              modifier =
+                Modifier
+                  .fillMaxWidth()
+                  .background(palette.tile, RectangleShape)
+                  .border(1.dp, palette.border, RectangleShape)
+                  .padding(horizontal = 14.dp, vertical = 10.dp)
+                  .semantics { contentDescription = "play_games_settings_section" },
+              verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+              ) {
+                Row(
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                  verticalAlignment = Alignment.CenterVertically,
+                ) {
+                  Image(
+                    painter = painterResource(R.drawable.ic_play_games_controller),
+                    contentDescription = null,
+                    colorFilter =
+                      ColorFilter.tint(
+                        if (isLinked) palette.accentSecondary else palette.glyph,
+                      ),
+                    modifier = Modifier.size(20.dp),
+                  )
+                  Text(
+                    text = strings.playGamesSectionTitle,
+                    fontFamily = DotGothic16FontFamily,
+                    color = palette.glyph,
+                    fontSize = 13.sp,
+                  )
+                }
+                Text(
+                  text = if (isLinked) strings.playGamesConnected else strings.playGamesDisconnected,
+                  fontFamily = DotGothic16FontFamily,
+                  color = if (isLinked) palette.statusSuccess else palette.muted,
+                  fontSize = 11.sp,
+                )
+              }
+
+              Text(
+                text = strings.playGamesOfflineNotice,
+                fontFamily = DotGothic16FontFamily,
+                color = palette.muted,
+                fontSize = 10.sp,
+              )
+
+              if (uiState.playGamesToast != null) {
+                val toastMsg =
+                  when (uiState.playGamesToast) {
+                    "restored" -> strings.playGamesRestoredToast
+                    "no_cloud_save" -> strings.playGamesNoCloudToast
+                    else -> strings.playGamesUnavailableToast
+                  }
+                Text(
+                  text = toastMsg,
+                  fontFamily = DotGothic16FontFamily,
+                  color = palette.accentPrimary,
+                  fontSize = 11.sp,
+                )
+              }
+
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+              ) {
+                OutlinedButton(
+                  onClick = { hapticClick(); onPlayGamesConnectOrAchievements() },
+                  shape = RectangleShape,
+                  modifier =
+                    Modifier
+                      .weight(1f)
+                      .semantics { contentDescription = "play_games_connect_or_achievements_btn" },
+                ) {
+                  Text(
+                    text =
+                      if (isLinked) strings.playGamesAchievementsBtn
+                      else strings.playGamesConnectBtn,
+                    fontFamily = DotGothic16FontFamily,
+                    fontSize = 11.sp,
+                    color = palette.accentSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                  )
+                }
+                OutlinedButton(
+                  onClick = { hapticClick(); onRestoreCloudSave() },
+                  shape = RectangleShape,
+                  modifier =
+                    Modifier
+                      .weight(1f)
+                      .semantics { contentDescription = "cloud_restore_btn" },
+                ) {
+                  Text(
+                    text = strings.playGamesRestoreBtn,
+                    fontFamily = DotGothic16FontFamily,
+                    fontSize = 11.sp,
+                    color = palette.accentPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                  )
+                }
+              }
+
+              OutlinedButton(
+                onClick = {
+                  hapticClick()
+                  onDisconnectPlayGames()
+                  showDisconnectGuide = true
+                },
+                shape = RectangleShape,
+                modifier =
+                  Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "play_games_disconnect_btn" },
+              ) {
+                Text(
+                  text = strings.playGamesDisconnectBtn,
+                  fontFamily = DotGothic16FontFamily,
+                  fontSize = 11.sp,
+                  color = palette.muted,
+                )
+              }
+            }
 
             // Language Switch
             Column(
@@ -488,6 +687,13 @@ fun MenuSheet(
               ) {
                 Text(strings.debugFill19ClearsBoard4, fontFamily = DotGothic16FontFamily, fontSize = 11.sp, color = palette.statusSuccess)
               }
+              OutlinedButton(
+                onClick = { hapticClick(); onDebugFill24ClearsBoard5() },
+                shape = RectangleShape,
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "debug_fill_b5_24" },
+              ) {
+                Text(strings.debugFill24ClearsBoard5, fontFamily = DotGothic16FontFamily, fontSize = 11.sp, color = palette.statusSuccess)
+              }
             }
             Spacer(modifier = Modifier.height(12.dp))
           }
@@ -524,6 +730,234 @@ fun MenuSheet(
         }
       },
     )
+  }
+
+  if (showDisconnectGuide) {
+    AlertDialog(
+      onDismissRequest = { showDisconnectGuide = false },
+      containerColor = palette.panel,
+      titleContentColor = palette.glyph,
+      textContentColor = palette.muted,
+      shape = RectangleShape,
+      title = { Text(strings.playGamesDisconnectTitle, fontFamily = DotGothic16FontFamily) },
+      text = {
+        Text(strings.playGamesDisconnectBody, fontFamily = DotGothic16FontFamily, fontSize = 12.sp)
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            hapticClick()
+            showDisconnectGuide = false
+            runCatching {
+              val launchIntent =
+                context.packageManager.getLaunchIntentForPackage(PlayGamesConfig.PLAY_GAMES_APP_PACKAGE)
+                  ?: Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://play.google.com/store/apps/details?id=${PlayGamesConfig.PLAY_GAMES_APP_PACKAGE}"),
+                  )
+              context.startActivity(launchIntent)
+            }
+          },
+        ) {
+          Text(strings.playGamesOpenAppBtn, color = palette.accentSecondary, fontFamily = DotGothic16FontFamily)
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { hapticClick(); showDisconnectGuide = false }) {
+          Text(strings.close, color = palette.muted, fontFamily = DotGothic16FontFamily)
+        }
+      },
+    )
+  }
+}
+
+@Composable
+private fun VisualBarProgressCard(
+  title: String,
+  valueLabel: String,
+  fraction: Float,
+  barColor: Color,
+  contentDesc: String,
+) {
+  val palette = KidouTheme.palette
+  val safeFraction = fraction.coerceIn(0f, 1f)
+  Column(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .background(palette.tile, RectangleShape)
+        .border(1.5.dp, palette.borderBright, RectangleShape)
+        .padding(horizontal = 12.dp, vertical = 10.dp)
+        .semantics { contentDescription = contentDesc },
+    verticalArrangement = Arrangement.spacedBy(6.dp),
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(text = title, color = palette.glyph, fontFamily = DotGothic16FontFamily, fontSize = 13.sp)
+      Text(text = valueLabel, color = barColor, fontFamily = DotGothic16FontFamily, fontSize = 13.sp)
+    }
+    Box(
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .height(10.dp)
+          .background(palette.panelSunken, RectangleShape)
+          .border(1.dp, palette.border, RectangleShape),
+    ) {
+      if (safeFraction > 0f) {
+        Box(
+          modifier =
+            Modifier
+              .fillMaxWidth(safeFraction)
+              .fillMaxHeight()
+              .background(barColor),
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun VisualBoardProgressRow(
+  boardId: Int,
+  clearedCount: Int,
+  totalSlots: Int,
+  threshold: Int?,
+  unlocked: Boolean,
+  statusText: String,
+  glyphs: Map<String, GlyphGrid>,
+) {
+  val palette = KidouTheme.palette
+  val digits = Base5.toDigitWordIds(boardId)
+  Column(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .background(palette.tile, RectangleShape)
+        .border(
+          1.dp,
+          if (clearedCount >= totalSlots) palette.statusSuccess.copy(alpha = 0.7f) else palette.border,
+          RectangleShape,
+        )
+        .padding(horizontal = 12.dp, vertical = 8.dp)
+        .semantics { contentDescription = "progress_board_$boardId" },
+    verticalArrangement = Arrangement.spacedBy(6.dp),
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+      ) {
+        PixelLed(
+          color =
+            when {
+              clearedCount >= totalSlots -> palette.statusSuccess
+              unlocked -> palette.accentPrimary
+              else -> palette.lampOff
+            },
+          size = 8.dp,
+        )
+        PixelGlyph(
+          grid = glyphs["n_board"],
+          size = 14.dp,
+          color = if (unlocked) palette.glyph else palette.muted,
+        )
+        digits.forEach { dId ->
+          PixelGlyph(
+            grid = glyphs[dId],
+            size = 13.dp,
+            color = if (unlocked) palette.accentPrimary else palette.muted,
+          )
+        }
+        Text(
+          text = statusText,
+          color = if (unlocked) palette.muted else palette.muted.copy(alpha = 0.7f),
+          fontFamily = DotGothic16FontFamily,
+          fontSize = 10.sp,
+        )
+      }
+      Text(
+        text = "$clearedCount / $totalSlots",
+        color = if (clearedCount >= totalSlots) palette.statusSuccess else palette.glyph,
+        fontFamily = DotGothic16FontFamily,
+        fontSize = 12.sp,
+      )
+    }
+
+    Row(
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .background(palette.panelSunken, RectangleShape)
+          .border(1.dp, palette.border, RectangleShape)
+          .padding(horizontal = 4.dp, vertical = 3.dp),
+      horizontalArrangement = Arrangement.spacedBy(2.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      for (i in 1..totalSlots) {
+        val filled = i <= clearedCount
+        val isThresh = threshold != null && i == threshold
+        Box(
+          modifier =
+            Modifier
+              .weight(1f)
+              .height(if (isThresh) 9.dp else 6.dp)
+              .background(
+                when {
+                  filled -> palette.statusSuccess
+                  isThresh -> palette.accentPrimary.copy(alpha = 0.65f)
+                  else -> palette.lampOff
+                },
+              ),
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun LabeledMiniBar(
+  label: String,
+  valueLabel: String,
+  fraction: Float,
+  barColor: Color,
+) {
+  val palette = KidouTheme.palette
+  val safeFraction = fraction.coerceIn(0f, 1f)
+  Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(text = label, color = palette.muted, fontFamily = DotGothic16FontFamily, fontSize = 12.sp)
+      Text(text = valueLabel, color = palette.glyph, fontFamily = DotGothic16FontFamily, fontSize = 12.sp)
+    }
+    Box(
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .height(7.dp)
+          .background(palette.panelSunken, RectangleShape)
+          .border(1.dp, palette.border, RectangleShape),
+    ) {
+      if (safeFraction > 0f) {
+        Box(
+          modifier =
+            Modifier
+              .fillMaxWidth(safeFraction)
+              .fillMaxHeight()
+              .background(barColor),
+        )
+      }
+    }
   }
 }
 
@@ -616,29 +1050,6 @@ private fun MenuTabButton(
       fontFamily = DotGothic16FontFamily,
       fontWeight = FontWeight.Normal,
       fontSize = 12.sp,
-    )
-  }
-}
-
-@Composable
-private fun StatRow(label: String, value: String) {
-  val palette = KidouTheme.palette
-  Row(
-    modifier =
-      Modifier
-        .fillMaxWidth()
-        .background(palette.tile, RectangleShape)
-        .border(1.dp, palette.border, RectangleShape)
-        .padding(horizontal = 14.dp, vertical = 10.dp),
-    horizontalArrangement = Arrangement.SpaceBetween,
-  ) {
-    Text(text = label, color = palette.muted, fontFamily = DotGothic16FontFamily, fontSize = 13.sp)
-    Text(
-      text = value,
-      color = palette.glyph,
-      fontFamily = DotGothic16FontFamily,
-      fontWeight = FontWeight.Normal,
-      fontSize = 13.sp,
     )
   }
 }

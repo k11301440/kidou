@@ -148,13 +148,7 @@ fun WordEditorSheet(
             color = palette.glyph,
           )
         }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-          Text(
-            text = strings.wordMemoTitle,
-            color = palette.muted,
-            fontFamily = DotGothic16FontFamily,
-            fontSize = 11.sp,
-          )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
           Text(
             text = translationField.text.trim().ifEmpty { strings.unregistered },
             color =
@@ -163,12 +157,6 @@ fun WordEditorSheet(
             fontFamily = DotGothic16FontFamily,
             fontWeight = FontWeight.Normal,
             fontSize = 19.sp,
-          )
-          Text(
-            text = strings.wordMemoHint,
-            color = palette.muted,
-            fontFamily = DotGothic16FontFamily,
-            fontSize = 11.sp,
           )
         }
       }

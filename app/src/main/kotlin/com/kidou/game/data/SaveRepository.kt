@@ -20,19 +20,32 @@ class SaveRepository(context: Context) {
     return runCatching {
       saveFile.readText(Charsets.UTF_8).let { text ->
         val raw = gson.fromJson(text, SaveDataV2::class.java) ?: return null
-        raw.copy(
-          dictionary = raw.dictionary ?: emptyMap(),
-          discoveredWordIds = raw.discoveredWordIds ?: emptySet(),
-          clearedLevelKeys = raw.clearedLevelKeys ?: emptySet(),
-          operationLog = raw.operationLog ?: emptyList(),
-          hapticsEnabled = raw.hapticsEnabled ?: true,
-          language = raw.language ?: AppLanguage.JA,
-          themeMode = raw.themeMode ?: ThemeMode.DARK,
-          colorTheme = raw.colorTheme ?: ColorTheme.AMBER_RUIN,
-        )
+        normalizeSaveData(raw)
       }
     }.getOrNull()
   }
+
+  fun serialize(data: SaveDataV2): ByteArray = gson.toJson(data).toByteArray(Charsets.UTF_8)
+
+  fun deserialize(bytes: ByteArray): SaveDataV2? =
+    runCatching {
+      val text = bytes.toString(Charsets.UTF_8)
+      val raw = gson.fromJson(text, SaveDataV2::class.java) ?: return null
+      normalizeSaveData(raw)
+    }.getOrNull()
+
+  private fun normalizeSaveData(raw: SaveDataV2): SaveDataV2 =
+    raw.copy(
+      dictionary = raw.dictionary ?: emptyMap(),
+      discoveredWordIds = raw.discoveredWordIds ?: emptySet(),
+      clearedLevelKeys = raw.clearedLevelKeys ?: emptySet(),
+      operationLog = raw.operationLog ?: emptyList(),
+      hapticsEnabled = raw.hapticsEnabled ?: true,
+      language = raw.language ?: AppLanguage.JA,
+      themeMode = raw.themeMode ?: ThemeMode.DARK,
+      colorTheme = raw.colorTheme ?: ColorTheme.AMBER_RUIN,
+      unlockedAchievements = raw.unlockedAchievements ?: emptySet(),
+    )
 
   fun save(data: SaveDataV2) {
     runCatching {

@@ -251,22 +251,50 @@ fun BoardScreen(
 
         val nextBoard =
           data.boardCollection.boards.firstOrNull { it.requiredBoardId == currentBoard.id }
-        if (currentBoard.levels.size < currentBoard.totalSlots) {
-          Text(
-            text = strings.levelLockedWip,
-            color = palette.muted,
-            fontFamily = DotGothic16FontFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = 11.sp,
-          )
-        } else if (nextBoard != null && !LevelEngine.isBoardUnlocked(nextBoard, uiState.clearedLevelKeys)) {
-          Text(
-            text = strings.boardLockedHint(currentBoard.id),
-            color = palette.muted,
-            fontFamily = DotGothic16FontFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = 11.sp,
-          )
+        if (nextBoard != null && !LevelEngine.isBoardUnlocked(nextBoard, uiState.clearedLevelKeys)) {
+          val unlockRuleLine1 =
+            listOf(
+              listOf("n_board") + Base5.toDigitWordIds(currentBoard.id),
+              listOf("d_1", "d_0", "d_0"),
+              listOf("m_among"),
+              listOf("d_4", "d_0"),
+              listOf("v_activate"),
+              listOf("m_if"),
+            )
+          val unlockRuleLine2 =
+            listOf(
+              listOf("n_board", "m_next"),
+              listOf("v_open"),
+            )
+          Column(
+            modifier =
+              Modifier
+                .fillMaxWidth()
+                .background(palette.panelSunken, RectangleShape)
+                .border(1.dp, palette.border, RectangleShape)
+                .semantics { contentDescription = "board_unlock_rule_glyphs" }
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+          ) {
+            GlyphSentenceRow(
+              slots = unlockRuleLine1,
+              glyphs = data.glyphs,
+              words = data.words,
+              dictionary = uiState.dictionary,
+              language = uiState.language,
+              onWordClick = onWordClick,
+              compact = true,
+            )
+            GlyphSentenceRow(
+              slots = unlockRuleLine2,
+              glyphs = data.glyphs,
+              words = data.words,
+              dictionary = uiState.dictionary,
+              language = uiState.language,
+              onWordClick = onWordClick,
+              compact = true,
+            )
+          }
         }
       }
     }

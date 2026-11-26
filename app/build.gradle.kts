@@ -14,8 +14,8 @@ android {
     applicationId = "com.kidou.game"
     minSdk = 26
     targetSdk = 36
-    versionCode = 4
-    versionName = "0.4.0"
+    versionCode = 5
+    versionName = "0.5.0"
 
     val admobAppId =
       (project.findProperty("KIDOU_ADMOB_APP_ID") as? String)
@@ -23,9 +23,14 @@ android {
     val admobRewardedId =
       (project.findProperty("KIDOU_ADMOB_REWARDED_ID") as? String)
         ?: "ca-app-pub-3940256099942544/5224354917"
+    val playGamesAppId =
+      (project.findProperty("KIDOU_PLAY_GAMES_APP_ID") as? String)
+        ?: "000000000000"
 
     manifestPlaceholders["ADMOB_APP_ID"] = admobAppId
     buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"$admobRewardedId\"")
+    buildConfigField("String", "PLAY_GAMES_APP_ID", "\"$playGamesAppId\"")
+    resValue("string", "game_services_project_id", playGamesAppId)
   }
 
   val keystorePropsFile =
@@ -71,6 +76,7 @@ android {
     compose = true
     aidl = false
     buildConfig = true
+    resValues = true
     shaders = false
   }
 
@@ -129,4 +135,7 @@ dependencies {
 
   // AdMob
   implementation("com.google.android.gms:play-services-ads:25.5.0")
+
+  // Google Play Games Services v2
+  implementation("com.google.android.gms:play-services-games-v2:22.1.0")
 }

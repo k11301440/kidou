@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -20,6 +22,7 @@ import com.kidou.game.ui.DictionarySheet
 import com.kidou.game.ui.GuideSheet
 import com.kidou.game.ui.LevelScreen
 import com.kidou.game.ui.MenuSheet
+import com.kidou.game.ui.RtaScreen
 import com.kidou.game.ui.StorySheet
 import com.kidou.game.ui.TitleScreen
 import com.kidou.game.ui.WordEditorSheet
@@ -67,7 +70,7 @@ class MainActivity : ComponentActivity() {
 
   override fun onResume() {
     super.onResume()
-    gameViewModel.onForeground()
+    gameViewModel.onForeground(this)
   }
 
   override fun onPause() {
@@ -83,9 +86,14 @@ private fun KidouAppRoot(
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val data = uiState.gameData ?: return
+  val achievementsLauncher =
+    rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
 
   BackHandler(enabled = uiState.route == ScreenRoute.LEVEL) {
     viewModel.backToBoard()
+  }
+  BackHandler(enabled = uiState.route == ScreenRoute.RTA) {
+    viewModel.exitRtaToTitle()
   }
 
   when (uiState.route) {
@@ -96,7 +104,18 @@ private fun KidouAppRoot(
         subtitle = data.boardCollection.titleSubtitle(uiState.language),
         language = uiState.language,
         bgmEnabled = uiState.bgmEnabled,
+        showRtaButton = uiState.isFinalLevelCleared,
+        rtaBestTimeMs = uiState.rtaBestTimeMs,
+        playGamesLinked = uiState.playGamesOptIn && uiState.playGamesStatus.isAuthenticated,
+        playGamesToast = uiState.playGamesToast,
         onStart = { viewModel.enterGameFromTitle() },
+        onStartRta = { viewModel.startRtaRun() },
+        onPlayGamesClick = {
+          viewModel.onPlayGamesEntryAction(activity) { intent ->
+            runCatching { achievementsLauncher.launch(intent) }
+          }
+        },
+        onClearPlayGamesToast = { viewModel.clearPlayGamesToast() },
         onToggleLanguage = { viewModel.setLanguage(it) },
         onToggleBgm = { viewModel.setBgmEnabled(it) },
       )
@@ -120,8 +139,22 @@ private fun KidouAppRoot(
         uiState = uiState,
         onBackToBoard = { viewModel.backToBoard() },
         onOpenNextLevel = { bId, lNum -> viewModel.openLevel(bId, lNum) },
-        onTrigger = { viewModel.triggerControl(it) },
+        onTrigger = { viewModel.triggerControl(it, activity) },
         onTickTicker = { viewModel.tickActiveLevelTicker() },
+        onWordClick = { viewModel.openWordEditor(it) },
+        onOpenDictionary = { viewModel.openDictionary(DictionaryTab.SCREEN) },
+        onOpenMenu = { viewModel.openMenu() },
+      )
+    }
+
+    ScreenRoute.RTA -> {
+      RtaScreen(
+        uiState = uiState,
+        onTickTimer = { viewModel.tickRtaTimer() },
+        onTickTicker = { viewModel.tickActiveRtaTicker() },
+        onTrigger = { viewModel.triggerRtaControl(it, activity) },
+        onRetry = { viewModel.startRtaRun() },
+        onExitToTitle = { viewModel.exitRtaToTitle() },
         onWordClick = { viewModel.openWordEditor(it) },
         onOpenDictionary = { viewModel.openDictionary(DictionaryTab.SCREEN) },
         onOpenMenu = { viewModel.openMenu() },
@@ -164,12 +197,20 @@ private fun KidouAppRoot(
       onSelectLanguage = { viewModel.setLanguage(it) },
       onSelectThemeMode = { viewModel.setThemeMode(it) },
       onSelectColorTheme = { viewModel.setColorTheme(it) },
+      onPlayGamesConnectOrAchievements = {
+        viewModel.onPlayGamesEntryAction(activity) { intent ->
+          runCatching { achievementsLauncher.launch(intent) }
+        }
+      },
+      onRestoreCloudSave = { viewModel.restoreFromCloud(activity) },
+      onDisconnectPlayGames = { viewModel.disconnectPlayGames() },
       onDebugBulkApply = { viewModel.debugBulkApplyTranslations() },
       onDebugResetTranslations = { viewModel.debugResetTranslations() },
       onDebugFill19ClearsBoard1 = { viewModel.debugFill19ClearsForBoard1() },
       onDebugFill19ClearsBoard2 = { viewModel.debugFill19ClearsForBoard2() },
       onDebugFill19ClearsBoard3 = { viewModel.debugFill19ClearsForBoard3() },
       onDebugFill19ClearsBoard4 = { viewModel.debugFill19ClearsForBoard4() },
+      onDebugFill24ClearsBoard5 = { viewModel.debugFill24ClearsForBoard5() },
       onResetAll = { viewModel.resetAll() },
       onDismiss = { viewModel.closeMenu() },
     )

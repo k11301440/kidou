@@ -270,6 +270,11 @@ data class SaveDataV2(
   val themeMode: ThemeMode = ThemeMode.DARK,
   val colorTheme: ColorTheme = ColorTheme.AMBER_RUIN,
   val selectedBoardId: Int = 1,
+  val rtaBestTimeMs: Long? = null,
+  val rtaClearCount: Int = 0,
+  val playGamesOptIn: Boolean = false,
+  val unlockedAchievements: Set<String> = emptySet(),
+  val updatedAtMs: Long = 0L,
 )
 
 data class LoadedGameData(

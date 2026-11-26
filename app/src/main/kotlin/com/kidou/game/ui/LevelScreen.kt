@@ -125,11 +125,32 @@ fun LevelScreen(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      PixelActionButton(
-        label = "← ${strings.backToBoard}",
-        accent = palette.accentSecondary,
+      val invertedFg = if (palette.isDark) palette.background else palette.tile
+      PixelBevelPad(
+        borderColor = palette.accentSecondary,
+        fillColor = palette.accentSecondary.copy(alpha = 0.12f),
         onClick = onBackToBoard,
-      )
+        modifier =
+          Modifier
+            .height(40.dp)
+            .semantics { contentDescription = "back_to_board" },
+      ) {
+        val fg = if (LocalPadPressed.current) invertedFg else palette.accentSecondary
+        Row(
+          modifier = Modifier.padding(horizontal = 12.dp),
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Text(
+            text = "←",
+            color = fg,
+            fontFamily = DotGothic16FontFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 15.sp,
+          )
+          PixelGlyph(grid = data.glyphs["n_board"], size = 18.dp, color = fg)
+        }
+      }
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         PixelActionButton(
           label = strings.dictionary,
@@ -145,318 +166,18 @@ fun LevelScreen(
     }
 
     // 2. Upper Half: Machine Chassis + Scrollable CRT & Plates
-    PixelStonePanel(
-      borderColor = if (levelState.isCleared) palette.statusSuccess else palette.borderBright,
+    MachineDisplayPanel(
+      levelDef = levelDef,
+      levelState = levelState,
+      glyphs = data.glyphs,
+      words = data.words,
+      dictionary = uiState.dictionary,
+      language = uiState.language,
+      revealLabel = strings.memoryRevealButton,
+      onWordClick = onWordClick,
+      onResetMemory = { onTrigger("memory_reset") },
       modifier = Modifier.fillMaxWidth().weight(1f),
-    ) {
-      Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-      ) {
-        // Pinned Header: Machine Name + Base-5 Level Number + Status LEDs
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          GlyphSentenceRow(
-            slots = listOf(listOf("n_machine"), Base5.toDigitWordIds(levelDef.levelNumber)),
-            glyphs = data.glyphs,
-            words = data.words,
-            dictionary = uiState.dictionary,
-            language = uiState.language,
-            onWordClick = onWordClick,
-            compact = true,
-          )
-
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-          ) {
-            PixelLed(
-              color = lampColorOf(levelState.lamp, palette),
-              size = 14.dp,
-              modifier = Modifier.semantics { contentDescription = "lamp_${levelState.lamp.name.lowercase()}" },
-            )
-            val stepTotal =
-              when {
-                levelDef.sequenceSteps.isNotEmpty() -> levelDef.sequenceSteps.size
-                req?.orderSequence?.isNotEmpty() == true -> req.orderSequence.size
-                req?.tickerTargets?.isNotEmpty() == true -> req.tickerTargets.size
-                else -> 0
-              }
-            val stepCompleted =
-              when {
-                levelDef.sequenceSteps.isNotEmpty() -> levelState.seqStep
-                req?.orderSequence?.isNotEmpty() == true -> levelState.orderProgress
-                req?.tickerTargets?.isNotEmpty() == true -> levelState.tickerCaptures
-                else -> 0
-              }
-            for (stepIdx in 0 until stepTotal) {
-              PixelLed(
-                color =
-                  if (stepIdx < stepCompleted || levelState.isCleared) palette.statusSuccess
-                  else palette.lampOff,
-                size = 10.dp,
-              )
-            }
-          }
-        }
-
-        // Scrollable Display Area + Right Scrollbar + Down Arrow Indicator
-        Box(
-          modifier =
-            Modifier
-              .fillMaxWidth()
-              .weight(1f)
-              .onSizeChanged { viewportHeightPx = it.height.toFloat().coerceAtLeast(1f) },
-        ) {
-          Column(
-            modifier =
-              Modifier
-                .fillMaxSize()
-                .verticalScroll(displayScroll)
-                .padding(end = if (displayScroll.maxValue > 0) 10.dp else 0.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-          ) {
-            // Recessed Phosphor CRT Readout
-            PixelCrtDisplay(
-              borderColor =
-                when (levelState.lamp) {
-                  LampState.GREEN -> palette.statusSuccess
-                  LampState.RED -> palette.statusDanger
-                  else -> palette.borderBright
-                },
-            ) {
-              if (levelDef.tickerEnabled) {
-                val digitId = "d_${levelState.tickerDigit}"
-                Row(
-                  modifier =
-                    Modifier
-                      .fillMaxWidth()
-                      .background(palette.tile.copy(alpha = 0.72f), RectangleShape)
-                      .border(
-                        1.5.dp,
-                        if (levelState.isCleared) palette.statusSuccess else palette.accentPrimary.copy(alpha = 0.75f),
-                        RectangleShape,
-                      )
-                      .padding(horizontal = 8.dp, vertical = 6.dp),
-                  horizontalArrangement = Arrangement.SpaceBetween,
-                  verticalAlignment = Alignment.CenterVertically,
-                ) {
-                  GlyphWordTile(
-                    wordId = "n_signal",
-                    grid = data.glyphs["n_signal"],
-                    wordDef = data.words["n_signal"],
-                    entry = uiState.dictionary["n_signal"],
-                    language = uiState.language,
-                    onClick = { onWordClick("n_signal") },
-                    compact = true,
-                  )
-                  Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                  ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                      levelDef.tickerSequence.forEachIndexed { idx, _ ->
-                        val active = idx == levelState.tickerIndex
-                        Box(
-                          modifier =
-                            Modifier
-                              .size(7.dp)
-                              .background(
-                                if (active) palette.accentPrimary else palette.lampOff,
-                                RectangleShape,
-                              ),
-                        )
-                      }
-                    }
-                    Box(
-                      contentAlignment = Alignment.Center,
-                      modifier =
-                        Modifier
-                          .size(44.dp)
-                          .background(palette.panelSunken, RectangleShape)
-                          .border(
-                            1.5.dp,
-                            if (levelState.isCleared) palette.statusSuccess else palette.accentPrimary,
-                            RectangleShape,
-                          )
-                          .semantics { contentDescription = "ticker_digit_${levelState.tickerDigit}" },
-                    ) {
-                      PixelGlyph(
-                        grid = data.glyphs[digitId],
-                        size = 28.dp,
-                        color = if (levelState.isCleared) palette.statusSuccess else palette.accentPrimary,
-                      )
-                    }
-                  }
-                }
-              }
-
-              if (levelState.primaryMessage.isNotEmpty()) {
-                GlyphSentenceRow(
-                  slots = levelState.primaryMessage,
-                  glyphs = data.glyphs,
-                  words = data.words,
-                  dictionary = uiState.dictionary,
-                  language = uiState.language,
-                  onWordClick = onWordClick,
-                  glyphColor =
-                    when (levelState.lamp) {
-                      LampState.RED -> palette.statusDanger
-                      LampState.GREEN -> palette.statusSuccess
-                      else -> palette.glyph
-                    },
-                )
-              }
-              if (levelState.secondaryMessage.isNotEmpty()) {
-                GlyphSentenceRow(
-                  slots = levelState.secondaryMessage,
-                  glyphs = data.glyphs,
-                  words = data.words,
-                  dictionary = uiState.dictionary,
-                  language = uiState.language,
-                  onWordClick = onWordClick,
-                  compact = true,
-                  glyphColor =
-                    when (levelState.lamp) {
-                      LampState.GREEN -> palette.statusSuccess
-                      LampState.RED -> palette.statusWarning
-                      else -> palette.glyph.copy(alpha = 0.88f)
-                    },
-                )
-              }
-            }
-
-            // Engraved Instruction Plates (or masked memory blanks if memoryMode && hasOperated)
-            val hidePlates = levelDef.memoryMode && levelState.hasOperated && !levelState.isCleared
-            if (hidePlates) {
-              Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-              ) {
-                GlyphWordTile(
-                  wordId = "v_hide",
-                  grid = data.glyphs["v_hide"],
-                  wordDef = data.words["v_hide"],
-                  entry = uiState.dictionary["v_hide"],
-                  language = uiState.language,
-                  onClick = { onWordClick("v_hide") },
-                  compact = true,
-                  glyphColor = palette.muted,
-                )
-                PixelActionButton(
-                  label = strings.memoryRevealButton,
-                  accent = palette.accentSecondary,
-                  onClick = { onTrigger("memory_reset") },
-                  modifier = Modifier.semantics { contentDescription = "memory_reveal_btn" },
-                )
-              }
-              levelDef.plates.forEach { _ ->
-                Box(
-                  modifier =
-                    Modifier
-                      .fillMaxWidth()
-                      .height(34.dp)
-                      .background(palette.panelSunken, RectangleShape)
-                      .border(1.dp, palette.border.copy(alpha = 0.55f), RectangleShape),
-                )
-              }
-            } else {
-              levelDef.plates.forEachIndexed { idx, plateSlots ->
-                val stepDone =
-                  (levelDef.sequenceSteps.isNotEmpty() && (idx < levelState.seqStep || levelState.isCleared))
-                Box(
-                  modifier =
-                    Modifier
-                      .fillMaxWidth()
-                      .background(
-                        if (stepDone) palette.statusSuccess.copy(alpha = 0.1f)
-                        else palette.tile.copy(alpha = 0.72f),
-                        RectangleShape,
-                      )
-                      .border(
-                        1.5.dp,
-                        if (stepDone) palette.statusSuccess else palette.border,
-                        RectangleShape,
-                      )
-                      .padding(horizontal = 8.dp, vertical = 6.dp),
-                ) {
-                  GlyphSentenceRow(
-                    slots = plateSlots,
-                    glyphs = data.glyphs,
-                    words = data.words,
-                    dictionary = uiState.dictionary,
-                    language = uiState.language,
-                    onWordClick = onWordClick,
-                    compact = true,
-                  )
-                }
-              }
-            }
-
-            if (displayScroll.maxValue > 0) {
-              Spacer(modifier = Modifier.height(22.dp))
-            }
-          }
-
-          // Vertical Pixel Scrollbar Track & Thumb
-          if (displayScroll.maxValue > 0) {
-            val totalContent = viewportHeightPx + displayScroll.maxValue.toFloat()
-            Canvas(
-              modifier =
-                Modifier
-                  .align(Alignment.CenterEnd)
-                  .fillMaxHeight()
-                  .width(5.dp)
-                  .semantics { contentDescription = "display_scrollbar" },
-            ) {
-              drawRect(color = palette.border.copy(alpha = 0.45f))
-              val thumbFraction = (viewportHeightPx / totalContent).coerceIn(0.18f, 0.9f)
-              val thumbH = size.height * thumbFraction
-              val progress =
-                (displayScroll.value.toFloat() / displayScroll.maxValue.toFloat()).coerceIn(0f, 1f)
-              val thumbY = (size.height - thumbH) * progress
-              drawRect(
-                color = palette.accentPrimary,
-                topLeft = Offset(0f, thumbY),
-                size = Size(size.width, thumbH),
-              )
-            }
-          }
-
-          // Downward Continuation Arrow Indicator
-          if (displayScroll.canScrollForward) {
-            Box(
-              contentAlignment = Alignment.Center,
-              modifier =
-                Modifier
-                  .align(Alignment.BottomCenter)
-                  .padding(bottom = 2.dp)
-                  .background(palette.panel.copy(alpha = 0.92f), RectangleShape)
-                  .border(1.5.dp, palette.accentPrimary, RectangleShape)
-                  .semantics { contentDescription = "display_scroll_down_hint" }
-                  .clickable {
-                    coroutineScope.launch {
-                      displayScroll.animateScrollTo(displayScroll.value + 200)
-                    }
-                  }
-                  .padding(horizontal = 12.dp, vertical = 2.dp),
-            ) {
-              Text(
-                text = "▼",
-                color = palette.accentPrimary,
-                fontFamily = DotGothic16FontFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 11.sp,
-              )
-            }
-          }
-        }
-      }
-    }
+    )
 
     // 3. Lower Half: Unified Mechanical Control Deck
     ControlDeckPanel(
@@ -481,7 +202,340 @@ fun LevelScreen(
 }
 
 @Composable
-private fun ControlDeckPanel(
+internal fun MachineDisplayPanel(
+  levelDef: LevelDef,
+  levelState: LevelRuntimeState,
+  glyphs: Map<String, GlyphGrid>,
+  words: Map<String, WordDef>,
+  dictionary: Map<String, DictionaryEntry>,
+  language: AppLanguage,
+  revealLabel: String,
+  onWordClick: (String) -> Unit,
+  onResetMemory: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  val palette = KidouTheme.palette
+  val req = levelDef.requirements
+  val displayScroll = rememberScrollState()
+  val coroutineScope = rememberCoroutineScope()
+  var viewportHeightPx by remember { mutableStateOf(1f) }
+
+  PixelStonePanel(
+    borderColor = if (levelState.isCleared) palette.statusSuccess else palette.borderBright,
+    modifier = modifier,
+  ) {
+    Column(
+      modifier = Modifier.fillMaxSize(),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+      // Pinned Header: Machine Name + Base-5 Level Number + Status LEDs
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        GlyphSentenceRow(
+          slots = listOf(listOf("n_machine"), Base5.toDigitWordIds(levelDef.levelNumber)),
+          glyphs = glyphs,
+          words = words,
+          dictionary = dictionary,
+          language = language,
+          onWordClick = onWordClick,
+          compact = true,
+        )
+
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+          PixelLed(
+            color = lampColorOf(levelState.lamp, palette),
+            size = 14.dp,
+            modifier = Modifier.semantics { contentDescription = "lamp_${levelState.lamp.name.lowercase()}" },
+          )
+          val stepTotal =
+            when {
+              levelDef.sequenceSteps.isNotEmpty() -> levelDef.sequenceSteps.size
+              req?.orderSequence?.isNotEmpty() == true -> req.orderSequence.size
+              req?.tickerTargets?.isNotEmpty() == true -> req.tickerTargets.size
+              else -> 0
+            }
+          val stepCompleted =
+            when {
+              levelDef.sequenceSteps.isNotEmpty() -> levelState.seqStep
+              req?.orderSequence?.isNotEmpty() == true -> levelState.orderProgress
+              req?.tickerTargets?.isNotEmpty() == true -> levelState.tickerCaptures
+              else -> 0
+            }
+          for (stepIdx in 0 until stepTotal) {
+            PixelLed(
+              color =
+                if (stepIdx < stepCompleted || levelState.isCleared) palette.statusSuccess
+                else palette.lampOff,
+              size = 10.dp,
+            )
+          }
+        }
+      }
+
+      // Scrollable Display Area + Right Scrollbar + Down Arrow Indicator
+      Box(
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .weight(1f)
+            .onSizeChanged { viewportHeightPx = it.height.toFloat().coerceAtLeast(1f) },
+      ) {
+        Column(
+          modifier =
+            Modifier
+              .fillMaxSize()
+              .verticalScroll(displayScroll)
+              .padding(end = if (displayScroll.maxValue > 0) 10.dp else 0.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          // Recessed Phosphor CRT Readout
+          PixelCrtDisplay(
+            borderColor =
+              when (levelState.lamp) {
+                LampState.GREEN -> palette.statusSuccess
+                LampState.RED -> palette.statusDanger
+                else -> palette.borderBright
+              },
+          ) {
+            if (levelDef.tickerEnabled) {
+              val digitId = "d_${levelState.tickerDigit}"
+              Row(
+                modifier =
+                  Modifier
+                    .fillMaxWidth()
+                    .background(palette.tile.copy(alpha = 0.72f), RectangleShape)
+                    .border(
+                      1.5.dp,
+                      if (levelState.isCleared) palette.statusSuccess else palette.accentPrimary.copy(alpha = 0.75f),
+                      RectangleShape,
+                    )
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+              ) {
+                GlyphWordTile(
+                  wordId = "n_signal",
+                  grid = glyphs["n_signal"],
+                  wordDef = words["n_signal"],
+                  entry = dictionary["n_signal"],
+                  language = language,
+                  onClick = { onWordClick("n_signal") },
+                  compact = true,
+                )
+                Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                  Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    levelDef.tickerSequence.forEachIndexed { idx, _ ->
+                      val active = idx == levelState.tickerIndex
+                      Box(
+                        modifier =
+                          Modifier
+                            .size(7.dp)
+                            .background(
+                              if (active) palette.accentPrimary else palette.lampOff,
+                              RectangleShape,
+                            ),
+                      )
+                    }
+                  }
+                  Box(
+                    contentAlignment = Alignment.Center,
+                    modifier =
+                      Modifier
+                        .size(44.dp)
+                        .background(palette.panelSunken, RectangleShape)
+                        .border(
+                          1.5.dp,
+                          if (levelState.isCleared) palette.statusSuccess else palette.accentPrimary,
+                          RectangleShape,
+                        )
+                        .semantics { contentDescription = "ticker_digit_${levelState.tickerDigit}" },
+                  ) {
+                    PixelGlyph(
+                      grid = glyphs[digitId],
+                      size = 28.dp,
+                      color = if (levelState.isCleared) palette.statusSuccess else palette.accentPrimary,
+                    )
+                  }
+                }
+              }
+            }
+
+            if (levelState.primaryMessage.isNotEmpty()) {
+              GlyphSentenceRow(
+                slots = levelState.primaryMessage,
+                glyphs = glyphs,
+                words = words,
+                dictionary = dictionary,
+                language = language,
+                onWordClick = onWordClick,
+                glyphColor =
+                  when (levelState.lamp) {
+                    LampState.RED -> palette.statusDanger
+                    LampState.GREEN -> palette.statusSuccess
+                    else -> palette.glyph
+                  },
+              )
+            }
+            if (levelState.secondaryMessage.isNotEmpty()) {
+              GlyphSentenceRow(
+                slots = levelState.secondaryMessage,
+                glyphs = glyphs,
+                words = words,
+                dictionary = dictionary,
+                language = language,
+                onWordClick = onWordClick,
+                compact = true,
+                glyphColor =
+                  when (levelState.lamp) {
+                    LampState.GREEN -> palette.statusSuccess
+                    LampState.RED -> palette.statusWarning
+                    else -> palette.glyph.copy(alpha = 0.88f)
+                  },
+              )
+            }
+          }
+
+          // Engraved Instruction Plates (or masked memory blanks if memoryMode && hasOperated)
+          val hidePlates = levelDef.memoryMode && levelState.hasOperated && !levelState.isCleared
+          if (hidePlates) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically,
+            ) {
+              GlyphWordTile(
+                wordId = "v_hide",
+                grid = glyphs["v_hide"],
+                wordDef = words["v_hide"],
+                entry = dictionary["v_hide"],
+                language = language,
+                onClick = { onWordClick("v_hide") },
+                compact = true,
+                glyphColor = palette.muted,
+              )
+              PixelActionButton(
+                label = revealLabel,
+                accent = palette.accentSecondary,
+                onClick = onResetMemory,
+                modifier = Modifier.semantics { contentDescription = "memory_reveal_btn" },
+              )
+            }
+            levelDef.plates.forEach { _ ->
+              Box(
+                modifier =
+                  Modifier
+                    .fillMaxWidth()
+                    .height(34.dp)
+                    .background(palette.panelSunken, RectangleShape)
+                    .border(1.dp, palette.border.copy(alpha = 0.55f), RectangleShape),
+              )
+            }
+          } else {
+            levelDef.plates.forEachIndexed { idx, plateSlots ->
+              val stepDone =
+                (levelDef.sequenceSteps.isNotEmpty() && (idx < levelState.seqStep || levelState.isCleared))
+              Box(
+                modifier =
+                  Modifier
+                    .fillMaxWidth()
+                    .background(
+                      if (stepDone) palette.statusSuccess.copy(alpha = 0.1f)
+                      else palette.tile.copy(alpha = 0.72f),
+                      RectangleShape,
+                    )
+                    .border(
+                      1.5.dp,
+                      if (stepDone) palette.statusSuccess else palette.border,
+                      RectangleShape,
+                    )
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+              ) {
+                GlyphSentenceRow(
+                  slots = plateSlots,
+                  glyphs = glyphs,
+                  words = words,
+                  dictionary = dictionary,
+                  language = language,
+                  onWordClick = onWordClick,
+                  compact = true,
+                )
+              }
+            }
+          }
+
+          if (displayScroll.maxValue > 0) {
+            Spacer(modifier = Modifier.height(22.dp))
+          }
+        }
+
+        // Vertical Pixel Scrollbar Track & Thumb
+        if (displayScroll.maxValue > 0) {
+          val totalContent = viewportHeightPx + displayScroll.maxValue.toFloat()
+          Canvas(
+            modifier =
+              Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .width(5.dp)
+                .semantics { contentDescription = "display_scrollbar" },
+          ) {
+            drawRect(color = palette.border.copy(alpha = 0.45f))
+            val thumbFraction = (viewportHeightPx / totalContent).coerceIn(0.18f, 0.9f)
+            val thumbH = size.height * thumbFraction
+            val progress =
+              (displayScroll.value.toFloat() / displayScroll.maxValue.toFloat()).coerceIn(0f, 1f)
+            val thumbY = (size.height - thumbH) * progress
+            drawRect(
+              color = palette.accentPrimary,
+              topLeft = Offset(0f, thumbY),
+              size = Size(size.width, thumbH),
+            )
+          }
+        }
+
+        // Downward Continuation Arrow Indicator
+        if (displayScroll.canScrollForward) {
+          Box(
+            contentAlignment = Alignment.Center,
+            modifier =
+              Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 2.dp)
+                .background(palette.panel.copy(alpha = 0.92f), RectangleShape)
+                .border(1.5.dp, palette.accentPrimary, RectangleShape)
+                .semantics { contentDescription = "display_scroll_down_hint" }
+                .clickable {
+                  coroutineScope.launch {
+                    displayScroll.animateScrollTo(displayScroll.value + 200)
+                  }
+                }
+                .padding(horizontal = 12.dp, vertical = 2.dp),
+          ) {
+            Text(
+              text = "▼",
+              color = palette.accentPrimary,
+              fontFamily = DotGothic16FontFamily,
+              fontWeight = FontWeight.Normal,
+              fontSize = 11.sp,
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+internal fun ControlDeckPanel(
   levelDef: LevelDef,
   levelState: LevelRuntimeState,
   glyphs: Map<String, GlyphGrid>,

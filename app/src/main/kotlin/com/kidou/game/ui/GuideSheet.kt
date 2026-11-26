@@ -41,17 +41,9 @@ fun GuideSheet(
     shape = RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp),
   ) {
     Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp).padding(bottom = 24.dp),
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp).padding(bottom = 24.dp),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Text(
-        text = strings.guideTitle,
-        fontFamily = DotGothic16FontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 18.sp,
-        color = palette.statusSuccess,
-      )
-
       PixelCrtDisplay(borderColor = palette.statusSuccess.copy(alpha = 0.7f)) {
         data.boardCollection.guideLines.forEach { lineSlots ->
           GlyphSentenceRow(
@@ -64,14 +56,6 @@ fun GuideSheet(
           )
         }
       }
-
-      Text(
-        text = strings.guideNote,
-        color = palette.muted,
-        fontFamily = DotGothic16FontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-      )
     }
   }
 }
